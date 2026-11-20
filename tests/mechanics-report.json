@@ -6,6 +6,7 @@
         "no_duplicate_food": true,
         "trust": 2,
         "allies": [
+          "p5",
           "tim"
         ]
       }
@@ -14,8 +15,8 @@
       "test": "red-light fair crossing",
       "result": {
         "mode": "result",
-        "steps": 1601,
-        "z": -34.035918360403336,
+        "steps": 1445,
+        "z": -34.057131743361296,
         "round": 1
       }
     },

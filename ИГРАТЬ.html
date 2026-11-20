@@ -150,7 +150,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 /* Последний раунд v2.1: случайные участники, случайные способности, чистый интерфейс и мобильное управление. */
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
 
-const SLOT_IDS=['mina','ivan','lev','asya','boris','tim','dana','vera','dok','matvey','elena','arkady','p13','p14','p15','p16'];
+const SLOT_IDS=['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14','p15'];
 const TRAITS=[
   {name:'Осторожный',style:'Говорит тихо и держится у стен.',react:[
     'Оглядывает зал: «Главное — не высовываться первым и следить за выходами».',
@@ -219,20 +219,33 @@ const TRAITS=[
 ];
 
 const PERK_POOL=[
-  {perk:'mina',role:'Разведчик вентиляции',tip:'Во время красного сигнала прячься за блоком. Через вентиляцию в туалете можно подсмотреть следующую игру.',offer:'Союз: раннее предупреждение куклы и разведка через шахту в туалете.'},
-  {perk:'ivan',role:'Тяжеловес',tip:'В канате важнее ритм и упор (C), чем частые нажатия.',offer:'Союз: +25% к силе каждого точного рывка каната.'},
-  {perk:'lev',role:'Тактик',tip:'В финале можно победить без драки: активируй три золотые точки на разметке.',offer:'Союз: в полтора раза быстрее захват контрольных точек в финале.'},
-  {perk:'asya',role:'Твёрдая рука',tip:'В сахарных сотах держи иглу на линии, а водой смягчай карамель.',offer:'Союз: шире допуск иглы и меньше трещин в сахарной фигуре.'},
-  {perk:'boris',role:'Уличный боец',tip:'На стеклянном мосту проверяй плиты камешком перед прыжком.',offer:'Союз: дополнительный камешек на мосту и усиленный удар в финале.'},
-  {perk:'tim',role:'Знаток дворовых игр',tip:'В шариках можно договориться с верным союзником без риска проиграть всё.',offer:'Союз: готов уступить шарики по-дружески при доверии ≥ 3.'},
-  {perk:'dana',role:'Бывший стекольщик',tip:'Закалённое стекло иначе преломляет свет на грани. Нажми Q перед прыжком.',offer:'Союз: бесплатный осмотр закалённого стекла клавишей Q на мосту.'},
-  {perk:'vera',role:'Ловкач и обменщик',tip:'В кабинках туалета за трубами можно найти спрятанные припасы.',offer:'Союз: тайник в туалете и +1 дополнительный жетон за каждый раунд.'},
-  {perk:'dok',role:'Бывший врач',tip:'Следи за здоровьем перед утренним сигналом и не ходи на игру раненым.',offer:'Особенность: может перевязать раны (+25 здоровья) в общежитии.'},
-  {perk:'matvey',role:'Марафонец',tip:'Экономь дыхание на длинной дистанции и вовремя переходи на шаг.',offer:'Союз: бег и прыжки расходуют на 20% меньше выносливости.'},
-  {perk:'elena',role:'Повар-заготовитель',tip:'Правильно распределённый паёк восстанавливает гораздо больше сил.',offer:'Союз: каждый съеденный паёк даёт дополнительно +12 здоровья и +12 сил.'},
-  {perk:'arkady',role:'Хладнокровный',tip:'Спокойствие даёт драгоценные секунды там, где остальные суетятся.',offer:'Союз: +12 секунд дополнительного времени в испытаниях.'},
-  {perk:'none',role:'Обычный участник',tip:'Держись надёжных людей, собирай информацию и не трать пайки впустую.',offer:'Обычный игрок: особых навыков нет, но делится слухами и массовкой поддерживает в зале.'}
+  // Способности 1 сезона
+  {perk:'mina',season:'С1',role:'Разведчик вентиляции',tip:'Во время красного сигнала прячься за блоком. Через вентиляцию в туалете можно подсмотреть следующую игру.',offer:'Союз: раннее предупреждение куклы и разведка через шахту в туалете.'},
+  {perk:'ivan',season:'С1',role:'Тяжеловес',tip:'В канате важнее ритм и упор (C), чем частые нажатия.',offer:'Союз: +25% к силе каждого точного рывка каната.'},
+  {perk:'lev',season:'С1',role:'Тактик',tip:'В финале можно победить без драки: активируй три золотые точки на разметке.',offer:'Союз: в полтора раза быстрее захват контрольных точек в финале.'},
+  {perk:'asya',season:'С1',role:'Твёрдая рука',tip:'В сахарных сотах держи иглу на линии, а водой смягчай карамель.',offer:'Союз: шире допуск иглы и меньше трещин в сахарной фигуре.'},
+  {perk:'boris',season:'С1',role:'Уличный боец',tip:'На стеклянном мосту проверяй плиты камешком перед прыжком.',offer:'Союз: дополнительный камешек на мосту и усиленный удар в финале.'},
+  {perk:'tim',season:'С1',role:'Знаток дворовых игр',tip:'В шариках можно договориться с верным союзником без риска проиграть всё.',offer:'Союз: готов уступить шарики по-дружески при доверии ≥ 3.'},
+  {perk:'dana',season:'С1',role:'Бывший стекольщик',tip:'Закалённое стекло иначе преломляет свет на грани. Нажми Q перед прыжком.',offer:'Союз: бесплатный осмотр закалённого стекла клавишей Q на мосту.'},
+  {perk:'vera',season:'С1',role:'Ловкач и обменщик',tip:'В кабинках туалета за трубами можно найти спрятанные припасы.',offer:'Союз: тайник в туалете и +1 дополнительный жетон за каждый раунд.'},
+  {perk:'dok',season:'С1',role:'Бывший врач',tip:'Следи за здоровьем перед утренним сигналом и не ходи на игру раненым.',offer:'Особенность: может перевязать раны (+25 здоровья) в общежитии.'},
+  {perk:'matvey',season:'С1',role:'Марафонец',tip:'Экономь дыхание на длинной дистанции и вовремя переходи на шаг.',offer:'Союз: бег и прыжки расходуют на 20% меньше выносливости.'},
+  {perk:'elena',season:'С1',role:'Повар-заготовитель',tip:'Правильно распределённый паёк восстанавливает гораздо больше сил.',offer:'Союз: каждый съеденный паёк даёт дополнительно +12 здоровья и +12 сил.'},
+  {perk:'arkady',season:'С1',role:'Хладнокровный',tip:'Спокойствие даёт драгоценные секунды там, где остальные суетятся.',offer:'Союз: +12 секунд дополнительного времени в испытаниях.'},
+
+  // Способности 2–3 сезонов
+  {perk:'veteran2',season:'С2–3',role:'Ветеран прошлых игр',tip:'Я уже видел эту куклу! Когда я кричу «Замрите!», стой как вкопанный — прикрою тебя корпусом.',offer:'Союз (С2–3): команда «Замрите!» — один раз за раунд спасает, если кукла засекла движение на красном свете.'},
+  {perk:'specops',season:'С2–3',role:'Бывший сержант спецназа',tip:'Держи низкую стойку и бей на выходе из блока. В ближнем бою главное — дисциплина.',offer:'Союз (С2–3): снижает получаемый урон на 35% и усиливает твои удары в финале.'},
+  {perk:'cross',season:'С2–3',role:'Тусовщик с кулоном-крестом',tip:'Видишь этот крест на шее? Внутри секрет, от которого страх исчезает, а ноги сами несут вперёд!',offer:'Особенность (С2–3): может дать капсулу из креста — 100% сил и ускорение на следующий раунд.'},
+  {perk:'gonggi',season:'С2–3',role:'Мастер костяшек гунги',tip:'В морской пехоте я тренировал пальцы на камушках гунги. Мелкая моторика решает всё!',offer:'Союз (С2–3): на 25% быстрее проход иглы в сотах и на 40% шире попадание шарика в лунку.'},
+  {perk:'shaman',season:'С2–3',role:'Морская шаманка',tip:'Духи шепчут мне, кто упадёт в бездну, а какая тропа выдержит шаг...',offer:'Особенность (С2–3): предчувствие в зале — заранее открывает первые 2 плиты стеклянного моста.'},
+  {perk:'crypto',season:'С2–3',role:'Крипто-аналитик',tip:'Любая игра — это математическое ожидание. Даже один лишний шарик меняет баланс.',offer:'Союз (С2–3): +1 бонусный шарик за каждую удачную ставку/бросок и выгодный обмен жетонов.'},
+  {perk:'hairpin',season:'С2–3',role:'Хозяйка со шпилькой-клинком',tip:'Поешь сначала, родной. А в волосах у меня припрятана острая шпилька на крайний случай.',offer:'Союз (С2–3): домашний припас в зале (+25 сытости) и скрытая шпилька (+30% к удару в финале).'},
+  {perk:'mingle',season:'С2–3',role:'Координатор по комнатам',tip:'Когда крутится карусель, выживают те, кто мгновенно собирает нужную группу!',offer:'Союз (С2–3): расширяет твой союз до 4 человек вместо 3 и ускоряет рывок каната.'},
+  {perk:'guardian',season:'С3',role:'Хранитель до конца',tip:'Мы не бросим друг друга на последнем рубеже, чего бы это ни стоило.',offer:'Союз (С3): один раз за игру спасает тебя от гибели при критическом уроне, оставляя 35 здоровья.'},
+  {perk:'diver',season:'С2–3',role:'Морской пловец',tip:'Держи ровный пульс — и сможешь пройти всю дистанцию на одном дыхании.',offer:'Союз (С2–3): на 30% медленнее падают силы и сытость + лишний камешек перед мостом.'}
 ];
+const NONE_PERK={perk:'none',season:'',role:'Обычный участник',tip:'Держись надёжных людей, собирай информацию и не трать пайки впустую.',offer:'Обычный игрок: особых навыков нет, но делится слухами и участвует в жизни зала.'};
 
 const HAIRS=['short','bob','bun','curly','buzz','grey'];
 const HAIR_COLORS=[0x221e1d,0x3b2d26,0x523b2d,0x17191c,0xc5ccd0,0x613a2b];
@@ -257,10 +270,13 @@ function generateRandomRoster(seedList=null){
     while(used.has(n))n=String(2+Math.floor(Math.random()*453)).padStart(3,'0');
     used.add(n);return n;
   }
-  // Перемешиваем способности так, чтобы они достались случайным номерам, а часть NPC была обычными игроками
-  let perks=[...PERK_POOL.slice(0,12),PERK_POOL[12],PERK_POOL[12],PERK_POOL[12],PERK_POOL[12]];
+  // Из всех 22 способностей (С1 + С2-3) в каждую новую игру попадают ТОЛЬКО 7 случайных, а остальные 9 NPC — обычные игроки!
+  let poolCopy=[...PERK_POOL];
+  for(let i=poolCopy.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[poolCopy[i],poolCopy[j]]=[poolCopy[j],poolCopy[i]];}
+  let chosenPerks=poolCopy.slice(0,7);
+  let perks=[...chosenPerks];
+  while(perks.length<16)perks.push(NONE_PERK);
   for(let i=perks.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[perks[i],perks[j]]=[perks[j],perks[i]];}
-
   let out=[];
   for(let i=0;i<16;i++){
     let id=SLOT_IDS[i], num=pickNum(), tr=TRAITS[Math.floor(Math.random()*TRAITS.length)], pk=perks[i];
@@ -333,7 +349,7 @@ function freshState(){
   return {
     version:1,round:0,day:1,hp:100,energy:100,hunger:85,food:2,water:1,probes:3,tokens:0,
     roster,
-    trust:Object.fromEntries(SLOT_IDS.map(id=>[id,0])),allies:[],daily:{},completed:[],secrets:[],
+    trust:{...Object.fromEntries(SLOT_IDS.map(id=>[id,0])),tim:0},allies:[],daily:{},completed:[],secrets:[],stimRound:-1,shamanHints:{},guardianUsed:false,
     vote:'none',ventScouted:{},muralRead:false,difficulty
   };
 }
@@ -1252,7 +1268,7 @@ function talk(n){
     [
       {text:'Поговорить и узнать о прошлом',primary:true,fn:()=>{
         let key=n.id+'talkSession'+state.round;
-        if(!state.daily[key]){state.daily[key]=true;state.trust[n.id]=clamp(r+1,0,5);}
+        if(!state.daily[key]){state.daily[key]=true;state.trust[n.id]=clamp(r+1,0,5);if(n===PEOPLE[5])state.trust.tim=state.trust[n.id];}
         if(!state.secrets.includes(n.id))state.secrets.push(n.id);
         save();
         openModal(`Игрок №${n.num} · ${n.role}`,
@@ -1265,15 +1281,16 @@ function talk(n){
         let key=n.id+'giftSession'+state.round;
         if(state.daily[key]){toast('За этот перерыв ты уже делился с этим игроком.');return;}
         if(state.food<1){toast('Нет пайка.');return;}
-        state.food--;state.daily[key]=true;state.trust[n.id]=clamp(r+1,0,5);
+        state.food--;state.daily[key]=true;state.trust[n.id]=clamp(r+1,0,5);if(n===PEOPLE[5])state.trust.tim=state.trust[n.id];
         if(!state.secrets.includes(n.id))state.secrets.push(n.id);
         save();talk(n);beep(700);
       }},
       {text:ally?'Поручение союзника':'Предложить союз',fn:()=>{
         if(!ally){
           if(r<2){toast('Нужно хотя бы 2 доверия.');return;}
-          if(state.allies.length>=3){toast('В союзе максимум 3 игрока.');return;}
-          state.allies.push(n.id);save();toast(`Игрок №${n.num} теперь в твоём союзе.`);talk(n);
+          let maxAllies=allied('mingle')||n.perk==='mingle'?4:3;
+          if(state.allies.length>=maxAllies){toast(`В союзе максимум ${maxAllies} игрока.`);return;}
+          state.allies.push(n.id);if(n===PEOPLE[5]&&!state.allies.includes('tim'))state.allies.push('tim');save();toast(`Игрок №${n.num} теперь в твоём союзе.`);talk(n);
         }else npcQuest(n);
       }},
       {text:`Действие: ${ctxLabel}`,fn:()=>npcContextAction(n,u)},
@@ -1281,6 +1298,28 @@ function talk(n){
         let hk='dokHeal'+state.round;
         if(state.daily[hk]){toast('Тебя уже перевязали в этот перерыв.');return;}
         state.daily[hk]=true;state.hp=clamp(state.hp+25,0,100);state.energy=clamp(state.energy+10,0,100);save();beep(640);toast(`Игрок №${n.num} (бывший врач) обработал раны: +25 здоровья.`);talk(n);
+      }}]:[]),
+      ...(n.perk==='cross'?[{text:'Капсула из кулона-креста (100% сил + рывок)',fn:()=>{
+        let ck='crossStim'+state.round;
+        if(state.daily[ck]){toast('В этот перерыв ты уже брал капсулу.');return;}
+        state.daily[ck]=true;state.energy=100;state.hp=clamp(state.hp+15,0,100);state.stimRound=state.round;save();beep(780,.12);toast(`Игрок №${n.num} открыл крест на шее: 100% сил и ускорение на раунд!`);talk(n);
+      }}]:[]),
+      ...(n.perk==='shaman'?[{text:'Выслушать пророчество шаманки',fn:()=>{
+        let sk='shamanProphecy'+state.round;
+        if(state.daily[sk]){toast('Пророчество на этот день уже получено.');return;}
+        state.daily[sk]=true;state.shamanHints=state.shamanHints||{};state.shamanHints[state.round]=true;state.probes+=1;save();beep(510,.15);
+        toast(`Игрок №${n.num} предрекла безопасную тропу (+1 камешек и знаки на мосту).`);talk(n);
+      }}]:[]),
+      ...(n.perk==='hairpin'?[{text:'Домашний гостинец (+25 сытости, +15 здоровья)',fn:()=>{
+        let hk='hairpinFood'+state.round;
+        if(state.daily[hk]){toast('Ты уже получил угощение в этот перерыв.');return;}
+        state.daily[hk]=true;state.hunger=clamp(state.hunger+25,0,100);state.hp=clamp(state.hp+15,0,100);save();beep(620,.1);
+        toast(`Игрок №${n.num} поделилась припасом и показала шпильку-клинок.`);talk(n);
+      }}]:[]),
+      ...(n.perk==='crypto'?[{text:'Обмен аналитика: 1 жетон → 2 пайка и вода',fn:()=>{
+        if(state.tokens<1){toast('Нужен 1 жетон.');return;}
+        state.tokens--;state.food+=2;state.water+=1;save();beep(690,.1);
+        toast(`Игрок №${n.num} выгодно обменял жетон на 2 пайка и воду.`);talk(n);
       }}]:[]),
       ...(ally?[{text:'Выйти из союза',fn:()=>{state.allies=state.allies.filter(id=>id!==n.id);save();talk(n);}}]:[]),
       {text:'Отойти',fn:()=>closeModal()}
@@ -1348,7 +1387,7 @@ function npcContextAction(n,u){
 
 function npcOffer(n){
   if(n.offer)return n.offer;
-  let pk=PERK_POOL.find(x=>x.perk===(n.perk||n.id));
+  let pk=PERK_POOL.find(x=>x.perk===(n.perk||n.id))||NONE_PERK;
   return pk?pk.offer:'Помощь в испытаниях.';
 }
 
@@ -1426,6 +1465,11 @@ function allied(key){return state.allies.some(a=>{if(a===key)return true;let p=P
 function rules(title,text,fn){openModal(title,text,[{text:'Начать испытание',primary:true,fn:()=>{closeModal();roundData.started=true;fn?.();}}],`ДЕНЬ ${state.day} · ${state.round===0?'ПЕРВАЯ ИГРА':'УТРО'} · ПРАВИЛА ИСПЫТАНИЯ`);}
 function startRound(){state.day=Math.min(6,state.round+1);let idx=state.round;if(idx===0)buildRed();else if(idx===1)buildCandy();else if(idx===2)buildTug();else if(idx===3)buildMarbles();else if(idx===4)buildGlass();else buildFinal();}
 function fail(reason){
+  if(allied('guardian')&&!state.guardianUsed&&mode!=='glass'){
+    state.guardianUsed=true;state.hp=Math.max(35,state.hp);state.energy=Math.max(50,state.energy);
+    if(roundData)roundData.expose=0;
+    beep(620,.15);toast('Хранитель из союза прикрыл тебя в последний миг! Ты остаёшься в игре.');return;
+  }
   if(mode==='dead'||mode==='ending')return;
   mode='dead';$('carvePanel').classList.remove('open');beep(100,.5,'sawtooth',.05);
   openModal('Испытание не пройдено',
@@ -1492,8 +1536,8 @@ function buildRed(){
     g.rotation.y=0;
     roundData.npcs.push({g,speed:3.1+Math.random()*1.6,alive:true});
   }
-  setObjective('01 · ТИШЕ ЕДЕШЬ','Дойди до красной линии у куклы. На зелёный — беги. Перед красным замри или укройся за блоком.');
-  rules(TITLES[0],`<p>Пересеки дальнюю линию за ${roundData.time} секунд. Кукла сканирует поле только на красный сигнал.</p><ul><li><b>WASD / Shift:</b> шаг или бег.</li><li><b>Укрытия:</b> за бетонными блоками датчик куклы тебя не видит.</li><li><b>C:</b> пригнуться — выше устойчивость.</li><li><b>Бонусы:</b> Мина и разведка вентиляции предупреждают о повороте головы куклы заранее.</li></ul>`);
+  setObjective('01 · ТИШЕ ЕДЕШЬ','Дойди до линии у куклы на зелёный сигнал. На красный замри или укройся за блоком.');
+  rules(TITLES[0],`<p>Пересеки дальнюю линию за ${roundData.time} с. На красный свет замри или встань за бетонный блок.</p>`);
 }
 function blockedLine(x1,z1,x2,z2){
   let dx=x2-x1,dz=z2-z1;
@@ -1521,7 +1565,10 @@ function updateRed(dt,moving){
   $('statusChip').style.background=r.light==='green'?(r.warning?'#ab7b1f':'#157b60'):'#c63b58';
   if(r.light==='red'&&(moving||player.y>.15)&&!blockedLine(0,-40,player.x,player.z)){
     r.detection+=dt;
-    if(r.detection>(difficulty==='easy'?.58:.28)+(keys.KeyC?.2:0))return fail('Кукла заметила движение на красный сигнал. Остановись заранее или используй укрытие.');
+    if(r.detection>(difficulty==='easy'?.58:.28)+(keys.KeyC?.2:0)){
+      if(allied('veteran2')&&!r.vetSaved){r.vetSaved=true;r.detection=0;beep(540,.1);toast('Ветеран прошлых игр крикнул «ЗАМРИТЕ!» и прикрыл тебя от датчика куклы!');}
+      else return fail('Кукла заметила движение на красный сигнал. Остановись заранее или используй укрытие.');
+    }
   }else r.detection=Math.max(0,r.detection-dt*2);
   r.npcs.forEach((n,i)=>{
     if(!n.alive)return;
@@ -1557,8 +1604,8 @@ function buildCandy(){
   person(-12,0,0xe33c70,'△',true);person(12,0,0xe33c70,'□',true);
   addInteract(0,.1,'E · выбрать фигуру и вырезать',chooseShape);
   roundData={started:false};
-  setObjective('02 · САХАРНАЯ ФИГУРА','Подойди к столу в центре детской площадки. Выбери фигуру и проведи иглой по контуру.');
-  rules(TITLES[1],'<p>Подойди к столу и нажми E. Выбери круг, треугольник, звезду или зонтик.</p><ul><li>Пройди контур иглой, удерживая ЛКМ.</li><li>Вода (или разведка шахты в туалете) позволяет увлажнить карамель.</li><li>Союз с Асей (№240) снижает риск трещин.</li></ul>');
+  setObjective('02 · САХАРНАЯ ФИГУРА','Подойди к столу в центре площадки, выбери фигуру и проведи иглой по контуру.');
+  rules(TITLES[1],'<p>Подойди к столу (E), выбери фигуру и проведи иглой по линии без трещин.</p>');
 }
 function chooseShape(){openModal('Выбор фигуры','<p>Простая фигура — безопаснее. Звезда и зонтик требуют твёрдой руки, но награда выше.</p>',[{text:'Круг · 1 жетон',primary:true,fn:()=>startCarve('circle')},{text:'Треугольник · 1 жетон',fn:()=>startCarve('triangle')},{text:'Звезда · 2 жетона',fn:()=>startCarve('star')},{text:'Зонтик · 3 жетона',fn:()=>startCarve('umbrella')},{text:'Отойти',fn:()=>closeModal()}]);}
 function makePath(type){let p=[],cx=270,cy=260,r=160;function line(a,b,steps=22){for(let i=0;i<steps;i++)p.push({x:a.x+(b.x-a.x)*i/steps,y:a.y+(b.y-a.y)*i/steps});}if(type==='circle'){for(let i=0;i<=170;i++){let a=-Math.PI/2+i/170*Math.PI*2;p.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}}else if(type==='triangle'||type==='star'){let verts=[],n=type==='triangle'?3:10;for(let i=0;i<n;i++){let a=-Math.PI/2+i/n*Math.PI*2,rr=type==='star'&&i%2?75:r;verts.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr});}for(let i=0;i<n;i++)line(verts[i],verts[(i+1)%n]);p.push(verts[0]);}else{for(let i=0;i<=80;i++){let a=Math.PI+i/80*Math.PI;p.push({x:cx+Math.cos(a)*r,y:240+Math.sin(a)*r});}line({x:430,y:240},{x:300,y:240});line({x:300,y:240},{x:300,y:380});for(let i=0;i<=30;i++){let a=i/30*Math.PI;p.push({x:270+Math.cos(a)*30,y:380+Math.sin(a)*30});}line({x:240,y:380},{x:240,y:240});line({x:240,y:240},{x:110,y:240});p.push({x:110,y:240});}return p;}
@@ -1583,7 +1630,7 @@ function segmentDist(p,a,b){let dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy,t=l?clamp(((
 function updateCarve(dt){
   let r=roundData;r.time-=dt;r.heat=Math.max(0,r.heat-dt*(r.down?.025:.25));
   if(r.down&&r.mouse){
-    let target=r.path[r.index],dist=Math.hypot(r.mouse.x-target.x,r.mouse.y-target.y),tolerance=(difficulty==='easy'?21:14)+(allied('asya')?7:0)+(r.soft?6:0),speed=r.lastMouse?Math.hypot(r.mouse.x-r.lastMouse.x,r.mouse.y-r.lastMouse.y):0;
+    let target=r.path[r.index],dist=Math.hypot(r.mouse.x-target.x,r.mouse.y-target.y),tolerance=(difficulty==='easy'?21:14)+(allied('asya')||allied('gonggi')?7:0)+(r.soft?6:0),speed=r.lastMouse?Math.hypot(r.mouse.x-r.lastMouse.x,r.mouse.y-r.lastMouse.y):0;
     if(dist<tolerance){
       let advancing=0;
       while(r.index<r.path.length-1&&Math.hypot(r.mouse.x-r.path[r.index].x,r.mouse.y-r.path[r.index].y)<tolerance&&advancing<5){r.index++;advancing++;}
@@ -1632,8 +1679,8 @@ function buildTug(){
   let flag=box(0,3.2,0,.65,.65,.08,0xee597f);
   let startProg=state.ventScouted[2]?.18:0;
   roundData={started:false,time:75+(allied('arkady')?12:0),progress:startProg,beat:0,combo:0,cooldown:0,pull:0,flag,strategy:'steady',call:0,called:false,rope};
-  setObjective('03 · ПЕРЕТЯГИВАНИЕ КАНАТА','Space в зелёный сектор шкалы. C — упор лежа (тактика №001). E — командный рывок. A / D — сменить тактику.');
-  rules(TITLES[2],'<p>Сдвинь флажок на свою башню за отведённое время.</p><ul><li><b>Space:</b> тяни в зелёный сектор ритма.</li><li><b>C:</b> упор лёжа (совет Тима №001) — сдерживает рывок врага и быстро возвращает силы.</li><li><b>A / D:</b> смена тактики (выносливость, баланс, напор).</li><li><b>E:</b> командный рывок вместе с союзниками.</li></ul>');
+  setObjective('03 · ПЕРЕТЯГИВАНИЕ КАНАТА','Жми Пробел / ТЯНУТЬ в зелёной зоне ритма, C / Упор для защиты и E / Рывок.');
+  rules(TITLES[2],'<p>Нажимай <b>Пробел / ТЯНУТЬ</b> в зелёном секторе, удерживай <b>C / Упор</b> для защиты и <b>E</b> для общего рывка.</p>');
 }
 function tugPull(){
   let r=roundData;if(!r.started||r.cooldown>0)return;
@@ -1688,45 +1735,48 @@ function buildMarbles(){
   person(10,-2,0x248274,'067');person(10,-4.2,0x248274,'240');
   person(0,-15.5,0xe33c70,'○',true);
 
-  let n=PEOPLE.find(n=>n.id==='tim'),g=person(0,-3,0x278b7d,n.num,false,{name:n.name,hair:n.hair});
-  roundData={started:false,time:(difficulty==='easy'?180:135)+(allied('arkady')?12:0),count:10,other:10,shots:0,aimYaw:0,aimPower:.5,shot:null,challenge:null,opponent:g,tries:0};
+  let n=PEOPLE.find(x=>x.perk==='tim'||x.id==='tim')||PEOPLE[5];
+  let g=person(0,-3,n.suitColor||0x278b7d,n.num,false,{name:n.name,hair:n.hair,hairColor:n.hairColor,glasses:n.glasses,skin:n.skin,scale:n.scale});
+  roundData={started:false,time:(difficulty==='easy'?180:135)+(allied('arkady')?12:0),count:10,other:10,shots:0,aimYaw:0,aimPower:.5,shot:null,challenge:null,opponent:g,partner:n,tries:0};
   cylinder(0,.025,-9,1.3,.05,0x536f66);cylinder(0,.03,-9,.55,.06,0x1c3438);label('ЛУНКА',0,2,-9,.5);
-  addInteract(0,-.5,'E · Тим (№001) — выбрать игру с шариками',marbleMenu);
-  setObjective('04 · ДЕСЯТЬ ШАРИКОВ','Собери 20 шариков в закатном переулке: «чёт / нечёт», бросок в лунку или договор кганбу с Тимом.');
-  rules(TITLES[3],'<p>У тебя и у Тима (№001) по 10 шариков. Чтобы пройти, собери все 20.</p><ul><li><b>Чёт / нечёт:</b> угадывай ставку. Высокое доверие даёт подсказку.</li><li><b>Броски в лунку:</b> A/D — угол, W/S — сила, Space — бросок.</li><li><b>Договор кганбу:</b> Тим уступит свои шарики, если он в твоём союзе и его доверие ≥ 3.</li></ul>');
+  addInteract(0,-.5,`E · ${n.name} — выбрать игру с шариками`,marbleMenu);
+  setObjective('04 · ДЕСЯТЬ ШАРИКОВ',`Собери 20 шариков в переулке: «чёт / нечёт», бросок в лунку или договор с ${n.name}.`);
+  rules(TITLES[3],`<p>У тебя и у напарника (${n.name}) по 10 шариков. Собери все 20 бросками в лунку, угадыванием или договором.</p>`);
 }
 function marbleMenu(){
   if(!roundData.started)return;
-  openModal('Тим (№001): игра в шарики',
-    `<p>Твои шарики: <b>${roundData.count}</b> · У Тима: <b>${roundData.other}</b></p>
-     <p>«Этот переулок совсем как в моей юности... Выберем правила вместе. Мы ведь с тобой кганбу — настоящие друзья».</p>`,
+  let n=roundData.partner||PEOPLE[5];
+  let canCoop=allied('tim')&&((state.trust.tim||0)>=3||(state.trust[n.id]||0)>=3);
+  openModal(`${n.name} (${n.trait}): шарики`,
+    `<p>Твои шарики: <b>${roundData.count}</b> · У напарника: <b>${roundData.other}</b></p>
+     <p>«Выберем правила вместе. Мы же напарники».</p>`,
     [
       {text:'Чёт / нечёт',primary:true,fn:chooseParity},
-      {text:'Точность: броски в лунку',fn:()=>{roundData.challenge='aim';player.x=0;player.z=3;player.y=0;player.yaw=0;closeModal();toast('A/D — угол, W/S — сила, Space — бросок. E — другие правила.');}},
-      {text:'Договориться по-дружески (Кганбу)',fn:()=>{
-        if(allied('tim')&&state.trust.tim>=3){win('Тим улыбнулся, назвал тебя своим кганбу и отдал последний шарик.',2);}
-        else{openModal('Тим качает головой','<p>«Кганбу доверяют друг другу до конца. Нужен союз и доверие хотя бы 3».</p>',[{text:'Другой способ',primary:true,fn:marbleMenu}]);}
+      {text:'Точность: броски в лунку',fn:()=>{roundData.challenge='aim';player.x=0;player.z=3;player.y=0;player.yaw=0;closeModal();toast('Угол и сила — стрелки/кнопки, Пробел/БРОСОК — бросить.');}},
+      {text:'Договориться по-дружески',fn:()=>{
+        if(canCoop){win(`${n.name} улыбнулся, назвал тебя настоящим другом и отдал свои шарики.`,2);}
+        else{openModal(`${n.name} качает головой`,'<p>«Для такого шага нужен союз со знатоком дворовых игр и доверие хотя бы 3».</p>',[{text:'Другой способ',primary:true,fn:marbleMenu}]);}
       }},
       {text:'Вернуться в переулок',fn:()=>closeModal()}
     ]
   );
 }
 function chooseParity(){
-  let r=roundData;if(r.count<=0)return fail('Все шарики проиграны.');
+  let r=roundData,n=r.partner||PEOPLE[5];if(r.count<=0)return fail('Все шарики проиграны.');
   let hidden=1+Math.floor(Math.random()*5);
-  let hint=(state.trust.tim>=2||state.ventScouted[3])?`Тим приоткрыл ладонь: похоже, там ${hidden>=3?'не меньше трёх':'не больше двух'} шариков.`:'Тим крепко сжал кулак: подсказки нет.';
+  let hint=((state.trust[n.id]||0)>=2||(state.trust.tim||0)>=2||state.ventScouted[3]||allied('shaman'))?`${n.name} приоткрыл ладонь: похоже, там ${hidden>=3?'не меньше трёх':'не больше двух'} шариков.`:`${n.name} крепко сжал кулак: подсказки нет.`;
   r.hidden=hidden;
-  openModal('Чёт или нечёт?',`<p>${hint}</p><p>Ставка: 1, 2 или 3 шарика. Твой запас: ${r.count}.</p>`,
+  openModal('Чёт или нечёт?',`<p>${hint}</p><p>Твой запас: ${r.count} / 20.</p>`,
     [1,2,3].flatMap(b=>[{text:`Чёт · ставка ${b}`,fn:()=>parityResult(true,b)},{text:`Нечёт · ставка ${b}`,fn:()=>parityResult(false,b)}]).concat([{text:'Изменить правила',fn:marbleMenu}])
   );
 }
 function parityResult(even,bet){
-  let r=roundData;if(r.count<bet){toast('Не хватает шариков для этой ставки.');return;}
-  let won=(r.hidden%2===0)===even,transfer=won?Math.min(bet,r.other):bet;
+  let r=roundData,n=r.partner||PEOPLE[5];if(r.count<bet){toast('Не хватает шариков для этой ставки.');return;}
+  let won=(r.hidden%2===0)===even,bonus=(won&&allied('crypto'))?1:0,transfer=won?Math.min(bet+bonus,r.other):bet;
   r.count+=won?transfer:-transfer;r.other+=won?-transfer:transfer;r.tries++;
-  if(r.count>=20)return win('Ты собрал все 20 шариков, читая подсказки в переулке.');
-  if(r.count<=0)return fail('Все шарики проиграны. Попробуй точные броски в лунку или договор кганбу.');
-  openModal(won?'Ты угадал':'Тим угадал',`<p>В ладони было ${r.hidden} шариков. ${won?'+':'−'}${transfer} шарика.</p><p>Твой запас: ${r.count} / 20.</p>`,
+  if(r.count>=20)return win('Ты собрал все 20 шариков в переулке.');
+  if(r.count<=0)return fail('Все шарики проиграны.');
+  openModal(won?'Ты угадал':`${n.name} угадал`,`<p>В ладони было ${r.hidden}. ${won?'+':'−'}${transfer} шарика.</p><p>Твой запас: ${r.count} / 20.</p>`,
     [{text:'Следующая ставка',primary:true,fn:chooseParity},{text:'Изменить правила',fn:marbleMenu},{text:'В переулок',fn:()=>closeModal()}]
   );
 }
@@ -1747,9 +1797,9 @@ function updateMarbles(dt){
       let s=r.shot;s.t+=dt;let t=clamp(s.t/s.dur,0,1);
       s.m.position.set(s.ex*t,.18+Math.sin(t*Math.PI)*2.6,3+(s.ez-3)*t);
       if(t>=1){
-        let hit=Math.hypot(s.ex,s.ez+9)<(difficulty==='easy'?1.05:.65);
+        let hit=Math.hypot(s.ex,s.ez+9)<(difficulty==='easy'?1.05:.65)*(allied('gonggi')?1.38:1);
         world.remove(s.m);s.m.geometry.dispose();s.m.material.dispose();r.shot=null;r.shots++;
-        if(hit){let n=Math.min(2,r.other);r.count+=n;r.other-=n;beep(800,.15);toast(`Попадание в лунку! ${r.count}/20 шариков.`);}
+        if(hit){let n=Math.min(allied('crypto')?3:2,r.other);r.count+=n;r.other-=n;beep(800,.15);toast(`Попадание в лунку! ${r.count}/20 шариков.`);}
         else{r.count--;r.other++;toast(`Промах. Осталось ${r.count}. Скорректируй силу и угол.`);}
         if(r.count>=20)return win('Ты выиграл все шарики точными бросками в лунку.',r.shots<=7?2:1);
         if(r.count<=0)return fail('Запас шариков исчерпан. Для лунки нужен угол около 0° и сила около 95%.');
@@ -1783,11 +1833,11 @@ function buildGlass(){
   let railMat=new THREE.MeshStandardMaterial({color:0xf25c92,emissive:0xc72a62,emissiveIntensity:.85});
   for(let x of [-3.45,0,3.45])box(x,1.77,-2,.13,.13,51,railMat);
   label('ВЫХОД С МОСТА',0,4,-29,.8);
-  if(allied('boris')){state.probes++;toast('Борис передал дополнительный камешек.');}
-  if(state.ventScouted[4])revealGlass(0,roundData.rows[0].safe);
+  if(allied('boris')||allied('diver')){state.probes++;toast('Союзник передал дополнительный камешек.');}
+  if(state.ventScouted[4]||state.shamanHints?.[4]||allied('shaman')){revealGlass(0,roundData.rows[0].safe);if(state.shamanHints?.[4]||allied('shaman'))revealGlass(1,roundData.rows[1].safe);}
   let g=person(1.75,28,0x298b7a,'310');g.position.y=2;roundData.npc=g;
-  setObjective('05 · СТЕКЛЯННЫЙ МОСТ','В каждой паре прочное только закалённое стекло. Q — проверить панель (или осмотр Даны №017). E — пустить NPC вперёд.');
-  rules(TITLES[4],`<p>Пройди 12 пар стеклянных панелей за ${roundData.time} секунд.</p><ul><li><b>Q:</b> бросить камешек (запас: ${state.probes}) или осмотреть преломление света с мастером-стекольщиком Даной (№017).</li><li><b>E:</b> попросить впереди идущего игрока сделать шаг.</li><li><b>Space + движение:</b> прыжок на следующую плитку.</li></ul>`);
+  setObjective('05 · СТЕКЛЯННЫЙ МОСТ','В каждой паре прочное только закалённое стекло. Q — проверить панель, E — пустить игрока вперёд.');
+  rules(TITLES[4],`<p>Пройди 12 пар стеклянных плит за ${roundData.time} с. <b>Q</b> — проверка стекла, <b>E</b> — пустить NPC вперёд.</p>`);
 }
 function nextGlassRow(){let r=roundData;for(let i=0;i<r.rows.length;i++){if(r.rows[i].z<player.z-.5&&!r.checked.has(i))return i;}return Math.min(11,Math.max(0,Math.floor((21-player.z)/4.2)+1));}
 function revealGlass(i,side){
@@ -1808,7 +1858,7 @@ function inspectGlass(){
   r.focus=2;
   if(allied('dana')){
     row.panels[row.safe].material.color.setHex(0x62e4a4);row.panels[row.safe].material.opacity=.88;
-    r.reveals[i]=row.safe;r.checked.add(i);toast(`Дана (№017): ряд ${i+1}, закалённое ${row.safe?'правое':'левое'} стекло.`);return;
+    r.reveals[i]=row.safe;r.checked.add(i);toast(`Стекольщик из союза: ряд ${i+1}, закалённое ${row.safe?'правое':'левое'} стекло.`);return;
   }
   if(state.probes<=0){toast('Камешки закончились. E — отправить NPC первым.');return;}
   state.probes--;let side=player.x>=0?1:0,safe=revealGlass(i,side);
@@ -1844,10 +1894,10 @@ function glassFloor(){
 function updateGlass(dt){
   let r=roundData;if(!r.started)return;r.time-=dt;r.focus=Math.max(0,r.focus-dt);
   items.forEach(i=>{if(i.fall)i.mesh.position.y-=dt*6;});
-  if(player.y<-2)return fail('Стекло не выдержало. Проверяй плиты камешками или с помощью стекольщика Даны (№017).');
-  if(player.z<-29&&player.y>1.5)return win(allied('dana')?'Стекольщик Дана помог определить закалённое стекло по преломлению света.':'Ты пересёк мост над бездной.',r.time>30?2:1);
+  if(player.y<-2)return fail('Стекло не выдержало. Проверяй плиты перед прыжком (Q).');
+  if(player.z<-29&&player.y>1.5)return win(allied('dana')?'Союзник-стекольщик помог определить закалённое стекло по бликам.':'Ты пересёк мост над бездной.',r.time>30?2:1);
   if(r.time<=0)return fail('Время на стеклянном мосту вышло.');
-  $('special').innerHTML=`<b>${Math.ceil(r.time)} с</b> · Камешки ${state.probes} · Ряд ${Math.min(12,Math.max(0,Math.floor((24-player.z)/4.2)))}/12${allied('dana')?' · Осмотр Даны: Q':''}`;
+  $('special').innerHTML=`<b>${Math.ceil(r.time)} с</b> · Камешки ${state.probes} · Ряд ${Math.min(12,Math.max(0,Math.floor((24-player.z)/4.2)))}/12${allied('dana')?' · Стекольщик: Q':''}`;
 }
 
 /* ИСПЫТАНИЕ 6: ПОСЛЕДНИЙ КРУГ (разметка Игры в кальмара: круг, треугольник и квадрат на песке) */
@@ -1876,8 +1926,8 @@ function buildFinal(){
   }
   person(-14,0,0xe33c70,'□',true);person(14,0,0xe33c70,'△',true);
   label('ГОЛОВА КАЛЬМАРА · ФИНИШ',0,3,-18,1);box(0,.025,-18,12,.05,1,0x54c493);
-  setObjective('06 · ПОСЛЕДНИЙ КРУГ','Победи соперника или активируй 3 точки на разметке корта (удерживай E), затем войди в верхний круг.');
-  rules(TITLES[5],'<p>Финальный корт с кругом, треугольником и квадратом. Есть два пути к победе:</p><ul><li><b>Поединок:</b> ЛКМ — удар, C — защита, Space — уклонение.</li><li><b>Тактика:</b> удерживай E у трёх золотых точек на углах фигуры (Лев №218 ускоряет захват).</li><li><b>Q:</b> позвать союзников отвлечь соперника.</li></ul>');
+  setObjective('06 · ПОСЛЕДНИЙ КРУГ','Победи соперника или активируй 3 золотые точки (E), затем шагни в верхний круг.');
+  rules(TITLES[5],'<p>Активируй 3 золотые точки на разметке (<b>E</b>) или одолей соперника в бою, после чего войди в финишный круг.</p>');
 }
 function finalAttack(){
   let r=roundData;if(!r.started||r.attackCD>0)return;
@@ -1887,7 +1937,7 @@ function finalAttack(){
   if(d<2.8){
     let dir=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),to=new THREE.Vector3(r.opp.position.x-player.x,0,r.opp.position.z-player.z).normalize();
     if(dir.dot(to)>.1){
-      r.hp-=(difficulty==='easy'?24:17)+(allied('boris')?4:0);r.stun=.45;
+      r.hp-=(difficulty==='easy'?24:17)+(allied('boris')?4:0)+(allied('specops')?7:0)+(allied('hairpin')?6:0);r.stun=.5;
       r.opp.position.x+=to.x*.65;r.opp.position.z+=to.z*.65;beep(230,.1,'triangle');
       toast(`Попадание! Силы соперника: ${Math.max(0,r.hp)}%.`);
     }else toast('Соперник за спиной. Развернись.');
@@ -1911,7 +1961,7 @@ function updateFinal(dt){
       r.opCD=1.35;
       if(player.y>.4)toast('Уклонение прыжком!');
       else if(keys.KeyC&&state.energy>10){state.energy-=10;hurt(3,'Ты заблокировал удар.');}
-      else hurt(13,'Удар соперника. C — защита; отойди или прыгни.');
+      else hurt(allied('specops')?8:13,'Удар соперника. C — защита; отойди или прыгни.');
     }
   }
   if(r.hp<=0){r.opp.rotation.z=Math.PI/2;r.opp.position.y=.4;}
@@ -2013,7 +2063,7 @@ function move(dt){
   if(mode==='marbles'&&roundData.challenge==='aim')return false;
   let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-(joyVec.active?joyVec.y:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+(joyVec.active?joyVec.x:0),len=Math.hypot(f,s);
   if(len){f/=len;s/=len;}
-  let crouch=!!keys.KeyC,running=!!((keys.ShiftLeft||keys.ShiftRight)||(joyVec.active&&Math.hypot(joyVec.x,joyVec.y)>0.78))&&state.energy>3&&len&&!crouch,speed=crouch?1.9:running?7.2:4.1;
+  let crouch=!!keys.KeyC,running=!!((keys.ShiftLeft||keys.ShiftRight)||(joyVec.active&&Math.hypot(joyVec.x,joyVec.y)>0.78))&&state.energy>3&&len&&!crouch,speed=(crouch?1.9:running?7.2:4.1)*(state.stimRound===state.round?1.16:1);
   if(mode==='glass')speed=crouch?1.7:running?7.4:4.4;
   if(state.hunger<20)speed*=.83;
   let dx=(-Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt,dz=(-Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;
@@ -2027,7 +2077,7 @@ function move(dt){
       if(nd<.7&&nd>.01){player.x+=nx/nd*(.7-nd)*.5;player.z+=nz/nd*(.7-nd)*.5;}
     }
   }
-  let drain=(mode==='final'?18:11)*(allied('matvey')?.8:1);
+  let stim=state.stimRound===state.round;let drain=(mode==='final'?18:11)*(allied('matvey')?.8:1)*(allied('diver')?.7:1)*(stim?.35:1);
   if(running)state.energy=clamp(state.energy-dt*drain,0,100);
   else state.energy=clamp(state.energy+dt*(len?3:8)*(state.hunger>20?1:.5),0,100);
   let floor=mode==='glass'?glassFloor():0;
