@@ -1,0 +1,162 @@
+{
+  "tests": [
+    {
+      "test": "food and trust",
+      "result": {
+        "no_duplicate_food": true,
+        "trust": 2,
+        "allies": [
+          "tim"
+        ]
+      }
+    },
+    {
+      "test": "red-light fair crossing",
+      "result": {
+        "mode": "result",
+        "steps": 1120,
+        "z": -34.135999999999584,
+        "round": 1
+      }
+    },
+    {
+      "test": "red-light detection",
+      "result": {
+        "mode": "dead"
+      }
+    },
+    {
+      "test": "all sugar shapes",
+      "result": [
+        {
+          "shape": "circle",
+          "mode": "result",
+          "steps": 57
+        },
+        {
+          "shape": "triangle",
+          "mode": "result",
+          "steps": 33
+        },
+        {
+          "shape": "star",
+          "mode": "result",
+          "steps": 71
+        },
+        {
+          "shape": "umbrella",
+          "mode": "result",
+          "steps": 62
+        }
+      ]
+    },
+    {
+      "test": "sugar pause resume",
+      "result": {
+        "visible": true,
+        "mode": "carve"
+      }
+    },
+    {
+      "test": "tug rhythm",
+      "result": {
+        "mode": "result",
+        "round": 3
+      }
+    },
+    {
+      "test": "marble aiming",
+      "result": {
+        "mode": "result",
+        "round": 4,
+        "count": 20
+      }
+    },
+    {
+      "test": "marble cooperation",
+      "result": {
+        "mode": "result",
+        "round": 4
+      }
+    },
+    {
+      "test": "glass inspections",
+      "result": {
+        "mode": "result",
+        "round": 5,
+        "reveals": 12
+      }
+    },
+    {
+      "test": "glass break",
+      "result": {
+        "mode": "dead",
+        "floor": -8
+      }
+    },
+    {
+      "test": "final nonviolent",
+      "result": {
+        "mode": "result",
+        "round": 6,
+        "points": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "test": "final melee",
+      "result": {
+        "mode": "result",
+        "round": 6,
+        "opponent": -2
+      }
+    },
+    {
+      "test": "night supplies",
+      "result": {
+        "mode": "hub",
+        "crates": 3,
+        "reward": true
+      }
+    },
+    {
+      "test": "all six day transitions",
+      "result": [
+        {
+          "round": 1,
+          "day": 1,
+          "mode": "hub"
+        },
+        {
+          "round": 2,
+          "day": 2,
+          "mode": "hub"
+        },
+        {
+          "round": 3,
+          "day": 3,
+          "mode": "hub"
+        },
+        {
+          "round": 4,
+          "day": 4,
+          "mode": "hub"
+        },
+        {
+          "round": 5,
+          "day": 5,
+          "mode": "hub"
+        },
+        {
+          "round": 6,
+          "day": 6,
+          "mode": "ending"
+        }
+      ]
+    }
+  ],
+  "browser_errors": []
+}

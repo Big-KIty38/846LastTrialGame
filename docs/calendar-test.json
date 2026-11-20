@@ -1,0 +1,24 @@
+{
+  "result": {
+    "breakfastOnce": true,
+    "dinnerOnce": true,
+    "evening": {
+      "day": 1,
+      "round": 1,
+      "mode": "hub",
+      "title": "ДЕНЬ 1 · ВЕЧЕР ПОСЛЕ ИГРЫ"
+    },
+    "morning": {
+      "day": 2,
+      "round": 1,
+      "mode": "candy",
+      "title": "ДЕНЬ 2 · УТРО · ПРАВИЛА ИСПЫТАНИЯ"
+    },
+    "checkpoint": {
+      "day": 1,
+      "round": 1,
+      "mode": "hub"
+    }
+  },
+  "javascript_errors": []
+}
