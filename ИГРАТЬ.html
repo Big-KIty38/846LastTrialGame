@@ -282,6 +282,18 @@ const SURVIVOR_COUNTS=[456,201,108,40,16,4,1];
 const PRIZE_BILLIONS=['0.0','25.5','34.8','41.6','44.0','45.2','45.6'];
 const TITLES=['Тише едешь','Сахарная фигура','Перетягивание каната','Десять шариков','Стеклянный мост','Последний круг'];
 
+// Досье должников и жалобы солдатам перед 1-й игрой (по мотивам 1-й серии 1 сезона и 3-й серии 2 сезона)
+const DEBT_PROFILES=[
+  {amount:'1,38 млрд ₩',reason:'игорные долги, растрата средств картеля и преследование кредиторов',complain:'Эй вы, в масках! Вы пустили усыпляющий газ в фургоне, привезли нас в какое-то непонятное место, переодели и забрали телефоны, кошельки и все вещи!'},
+  {amount:'6,0 млрд ₩',reason:'провал на фьючерсах, растрата клиентских активов и три ордера на арест',complain:'По какому праву нас переодели в эту зелёную форму с номерами и изъяли документы, часы и телефоны?! Где мы вообще находимся?!'},
+  {amount:'1,8 млрд ₩',reason:'крах криптопроекта, коллекторские иски и угроза тюремного срока',complain:'Верните мой смартфон и одежду! Вы усыпили нас по дороге и заперли в бункере без связи с внешним миром!'},
+  {amount:'1,19 млрд ₩',reason:'проигрыш всех средств на крипторынке и маржинальных сделках',complain:'Йоу, солдаты! Пока я был в отключке, вы сняли с меня все вещи, телефон и напялили этот зелёный спортивный костюм! Что за беспредел?!'},
+  {amount:'750 млн ₩',reason:'подпольные тотализаторы, микрозаймы и ежедневные угрозы коллекторов',complain:'По телефону обещали обычный заработок! С какой стати нас усыпили в машине, привезли непонятно куда и забрали всё до последней монеты?!'},
+  {amount:'540 млн ₩',reason:'банкротство семейного дела и неподъёмные проценты ростовщиков',complain:'У меня в куртке остались лекарства, деньги и телефон! Немедленно верните наши вещи и объясните, куда нас привезли!'},
+  {amount:'890 млн ₩',reason:'долги посредникам за переправу семьи и неоплаченные счета клиники',complain:'Окон нет, двери заперты, вокруг люди с оружием... Верните наши вещи и выпустите тех, кто не хочет здесь оставаться!'},
+  {amount:'920 млн ₩',reason:'поручительство по чужим кредитам и арест единственного жилья',complain:'Вы вытащили нас из машин спящими, переодели как заключённых и забрали всё! Кто дал вам такое право?!'}
+];
+
 function generateRandomRoster(seedList=null){
   if(seedList&&Array.isArray(seedList)&&seedList.length>=12){
     PEOPLE.length=0;PEOPLE.push(...seedList);
@@ -303,11 +315,14 @@ function generateRandomRoster(seedList=null){
   for(let i=perks.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[perks[i],perks[j]]=[perks[j],perks[i]];}
   let out=[];
   for(let i=0;i<16;i++){
-    let id=SLOT_IDS[i], num=pickNum(), tr=TRAITS[Math.floor(Math.random()*TRAITS.length)], pk=perks[i];
+    let id=SLOT_IDS[i], num=pickNum(), tr=TRAITS[Math.floor(Math.random()*TRAITS.length)], pk=perks[i], dp=DEBT_PROFILES[i%DEBT_PROFILES.length];
     out.push({
       id,
       num,
       name:`Игрок №${num}`,
+      debtAmount:dp.amount,
+      debtReason:dp.reason,
+      complainLine:dp.complain,
       trait:tr.name,
       traitStyle:tr.style,
       perk:pk.perk,
@@ -371,7 +386,7 @@ function syncTouchUI(){
 function freshState(){
   let roster=generateRandomRoster(null);
   return {
-    version:1,round:0,day:1,hp:100,energy:100,hunger:85,food:2,water:1,probes:3,tokens:0,
+    version:1,round:0,day:1,hp:100,energy:100,hunger:85,food:0,water:0,probes:3,tokens:0,
     roster,
     trust:{...Object.fromEntries(SLOT_IDS.map(id=>[id,0])),tim:0},allies:[],daily:{},completed:[],secrets:[],stimRound:-1,shamanHints:{},guardianUsed:false,
     vote:'none',ventScouted:{},muralRead:false,difficulty
@@ -392,7 +407,17 @@ function beep(freq=450,dur=.09,type='sine',vol=.055){if(!soundOn)return;try{audi
 function toast(t){$('toast').textContent=t;$('toast').classList.add('visible');messageTimeout=loopTime+4.2;}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setObjective(title,text){$('objectiveTitle').textContent=title;$('objectiveText').textContent=text;}
-function closeModal(lock=true){overlay=false;paused=false;keys={};joyVec={x:0,y:0,active:false};$('modal').classList.remove('open');$('carvePanel').classList.toggle('open',mode==='carve');syncTouchUI();if(lock&&started&&mode!=='carve'&&!showTouchUI())lockPointer();}
+function closeModal(lock=true){
+  if(roundData&&roundData.cutsceneCam){
+    roundData.cutsceneCam=null;
+    if(roundData.ledMesh)roundData.ledMesh.material=makeLedBoard(state?state.round:0);
+    if(state&&state.round===0)state.daily.contractSigned=true;
+  }
+  overlay=false;paused=false;keys={};joyVec={x:0,y:0,active:false};
+  $('modal').classList.remove('open');$('carvePanel').classList.toggle('open',mode==='carve');
+  syncTouchUI();
+  if(lock&&started&&mode!=='carve'&&!showTouchUI())lockPointer();
+}
 function openModal(title,body,buttons=[],tag=''){keys={};joyVec={x:0,y:0,active:false};roundData.down=false;changingLock=true;document.exitPointerLock?.();setTimeout(()=>changingLock=false,100);overlay=true;paused=true;$('modal').classList.add('open');$('modalTag').textContent=tag;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalButtons').innerHTML='';buttons.forEach((b,i)=>{let el=document.createElement('button');el.className=b.primary?'primary':'';el.textContent=`${i<9?i+1+'. ':''}${b.text}`;el.onclick=b.fn;$('modalButtons').appendChild(el);});syncTouchUI();}
 function lockPointer(){if(showTouchUI())return;try{let p=renderer.domElement.requestPointerLock?.();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
 
@@ -756,6 +781,33 @@ function makeLedBoard(roundIdx){
   return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)});
 }
 
+/* Экран досье должников над белой аркой (включается солдатами в кат-сцене перед 1-й игрой) */
+function makeDebtDossierBoard(){
+  let cv=document.createElement('canvas');cv.width=768;cv.height=340;
+  let c=cv.getContext('2d');
+  c.fillStyle='#0a1014';c.fillRect(0,0,768,340);
+  c.strokeStyle='#e33c70';c.lineWidth=12;c.strokeRect(8,8,752,324);
+  c.fillStyle='#ff6b96';c.font='bold 24px monospace';c.textAlign='center';
+  c.fillText('○ △ □  ДОСЬЕ УЧАСТНИКОВ · СУММЫ ДОЛГОВ  ○ △ □',384,48);
+  c.strokeStyle='rgba(255,107,150,.35)';c.lineWidth=2;
+  c.beginPath();c.moveTo(40,62);c.lineTo(728,62);c.stroke();
+  c.textAlign='left';c.font='bold 22px monospace';
+  let rows=[
+    `№${PEOPLE[0]?.num||'101'} (${PEOPLE[0]?.trait||'Дерзкий'}) — ДОЛГ: ${PEOPLE[0]?.debtAmount||'1,38 млрд ₩'}`,
+    `№${PEOPLE[1]?.num||'218'} (${PEOPLE[1]?.trait||'Рассудительный'}) — ДОЛГ: ${PEOPLE[1]?.debtAmount||'6,0 млрд ₩'}`,
+    `№${PEOPLE[2]?.num||'333'} (${PEOPLE[2]?.trait||'Хитрый'}) — ДОЛГ: ${PEOPLE[2]?.debtAmount||'1,8 млрд ₩'}`,
+    `№${PEOPLE[3]?.num||'230'} (${PEOPLE[3]?.trait||'Нервный'}) — ДОЛГ: ${PEOPLE[3]?.debtAmount||'1,19 млрд ₩'}`,
+    `№456 (СОН КИ ХУН / ТЫ) — ДОЛГ: 456 000 000 ₩`
+  ];
+  rows.forEach((r,idx)=>{
+    c.fillStyle=idx===4?'#ffd86b':'#d9f7ee';
+    c.fillText(r,46,102+idx*38);
+  });
+  c.textAlign='center';c.fillStyle='#8ef0cb';c.font='bold 22px monospace';
+  c.fillText('УЧАСТИЕ ДОБРОВОЛЬНОЕ · ТРЕБУЕТСЯ ПОДПИСАТЬ ДОГОВОР',384,306);
+  return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)});
+}
+
 /* Гигантская прозрачная копилка-свинья с пачками денег под потолком зала */
 function buildPiggyBank(roundIdx){
   let g=new THREE.Group();g.position.set(0,5.35,-1);world.add(g);
@@ -771,8 +823,8 @@ function buildPiggyBank(roundIdx){
     cylinder(dx,1.1,dz,.04,1.8,0x8fa3ad,g,8);
     cylinder(dx,-1.15,dz,.18,.35,goldMat,g,10);
   }
-  // Пачки денег внутри копилки (растут с каждым пройденным раундом!)
-  let stacks=4+roundIdx*14;
+  // До первой игры (roundIdx === 0) копилка совершенно пуста! Деньги падают только после игр.
+  let stacks=roundIdx===0?0:(8+roundIdx*14);
   for(let i=0;i<stacks;i++){
     let ang=i*2.1, rad=(i%5)*.26, h=-.95+Math.floor(i/7)*.14;
     box(Math.cos(ang)*rad,h,Math.sin(ang)*rad*1.2,.38,.11,.22,i%3?0x85bb65:0xe5c158,g);
@@ -785,10 +837,10 @@ function buildPiggyBank(roundIdx){
 /* Диалоги между NPC в реальном времени по мотивам сериала (зависят от текущего раунда) */
 const PAIR_CHATS=[
   [
-    ['«Тут 456 человек, и у каждого долги на сотни миллионов».','«Главное — не паниковать раньше времени и смотреть по сторонам».'],
-    ['«Держись подальше от моей койки, если не хочешь проблем!»','«Остынь. Побереги силы для того, что за этими воротами».'],
-    ['«Нам нужно держаться группой, в одиночку здесь не выжить».','«Согласен. Посмотрим, кому тут можно доверять».'],
-    ['«Кто здесь самый опытный? Надо собирать команду!»','«Здесь нужна не только сила, но и холодная голова».']
+    ['«Усыпили газом в фургоне, переодели в зелёную форму и забрали телефон, часы и бумажник!»','«Солдат с квадратом сказал, что все наши вещи вернут, если сыграем по их правилам...»'],
+    ['«Ты видел, как они вывели наши долги на огромный экран над аркой?! Сотни миллионов и миллиарды вон!»','«Отступать нам всё равно некуда — снаружи коллекторы, а здесь говорят про добровольный шанс».'],
+    ['«В договоре всего три пункта: нельзя прекратить игру самому, отказ — выбывание, выход — только голосованием».','«А голосование и раздача еды будут только после первой игры. Надо держаться вместе!»'],
+    ['«Откуда эти люди в розовых масках знают каждый наш кредит и каждую просрочку?!»','«Потому что на визитку позвонили только те, кому больше нечего терять».']
   ],
   [
     ['«Вы видели эту куклу?! Датчики ловят малейшее движение!»','«Если встать за бетонным блоком — луч тебя не достанет».'],
@@ -1122,23 +1174,59 @@ function buildDorm(){
   let piggy=buildPiggyBank(state.round);
   piggy.position.set(0,7.75,-4.2);
   cylinder(0,.42,-11.8,.68,.84,0x1d2b33);
-  fastBox(-.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0x2b9dff,emissive:0x1b66c9,emissiveIntensity:.9}));
-  fastBox(.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0xff4365,emissive:0xb81d3d,emissiveIntensity:.9}));
+  fastBox(-.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0x2b9dff,emissive:0x1b66c9,emissiveIntensity:state.round>0?.95:.25}));
+  fastBox(.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0xff4365,emissive:0xb81d3d,emissiveIntensity:state.round>0?.95:.25}));
   solid(0,-11.8,1.4,1.4);
-  label(`КОПИЛКА · ${PRIZE_BILLIONS[state.round]} МЛРД ₩`,0,1.95,-11.8,.5,'#ffd86b');
-  addInteract(0,-10.0,'E · копилка, статистика выживших и голосование (О / Х)',inspectPiggyVote);
+  label(
+    state.round===0
+      ?'КОПИЛКА ПУСТА (0 ₩) · ГОЛОСОВАНИЕ — ПОСЛЕ ИГРЫ'
+      :`1. ГОЛОСОВАНИЕ (О / Х) · ${PRIZE_BILLIONS[state.round]} МЛРД ₩`,
+    0,1.95,-11.8,.5,'#ffd86b'
+  );
+  addInteract(
+    0,-10.0,
+    state.round===0
+      ?'E · пустая копилка и договор (голосование проводится после игры)'
+      :(state.daily['votedRound'+state.round]?'E · копилка и итоги голосования (О / Х)':'E · ШАГ 1: ПРОГОЛОСОВАТЬ (О / Х) ПОСЛЕ ИГРЫ'),
+    inspectPiggyVote
+  );
+
+  // Центральные белые ворота на испытания и терминал договора игрока (○ △ □) перед аркой
+  addInteract(
+    0,-17.8,
+    state.round===0
+      ?'E · белые ворота — выйти на первую игру («Тише едешь»)'
+      :'E · белые ворота на испытания (откроются утром после голосования, ужина и сна)',
+    openTrialGates
+  );
+  // Стойка с бланками договора согласия (○ △ □) у ступеней арки
+  cylinder(2.1,.52,-16.8,.32,1.04,0x1d2930);
+  fastBox(2.1,1.08,-16.8,.55,.06,.42,mat(0xf4efe2,.5,.1));
+  label('ДОГОВОР УЧАСТНИКА (○ △ □)',2.1,1.72,-16.8,.42,'#bfe8dc');
+  addInteract(2.1,-15.5,'E · договор о согласии на участие (3 пункта) и кат-сцена 1-го дня',()=>startDay1Cutscene(0));
 
   // 8. СТОЙКА ВЫДАЧИ ПАЙКА, ОБМЕН ПРИПАСОВ И ТВОЯ КОЙКА (№456)
-  // Стойка выдачи пайка стоит слева от левого входа в туалет (x = -10.2, z = -17.6), чтобы оба входа в туалет (x = ±6.0) были полностью открыты!
+  // Выдача еды работает ТОЛЬКО после завершения игры и ТОЛЬКО после голосования (О / Х)!
   box(-10.2,.85,-17.6,3.6,1.7,1.5,0x243f49);
   box(-10.2,1.76,-17.6,3.8,.14,1.7,0xe8cf8f);
   solid(-10.2,-17.6,4.0,1.9);
-  for(let i=0;i<5;i++){
-    fastBox(-11.4+i*.6,1.9,-17.6,.38,.14,.28,mat(0xc9a85c,.4,.4));
-    cylinder(-11.25+i*.6,1.94,-17.15,.08,.28,0x7fc8e8);
+  if(state.round>0){
+    for(let i=0;i<5;i++){
+      fastBox(-11.4+i*.6,1.9,-17.6,.38,.14,.28,mat(0xc9a85c,.4,.4));
+      cylinder(-11.25+i*.6,1.94,-17.15,.08,.28,0x7fc8e8);
+    }
   }
-  label('ВЫДАЧА ПАЙКА И ВОДЫ',-10.2,2.85,-17.6,.56);
-  addInteract(-10.2,-15.8,'E · получить паёк и воду на перерыв',getRation);
+  label(
+    state.round===0?'ВЫДАЧА ПАЙКА (ПОСЛЕ 1-Й ИГРЫ)':'2. ВЫДАЧА ПАЙКА (ПОСЛЕ ГОЛОСОВАНИЯ)',
+    -10.2,2.85,-17.6,.54
+  );
+  addInteract(
+    -10.2,-15.8,
+    state.round===0
+      ?'E · стойка пайка (выдача только после игры и голосования)'
+      :'E · ШАГ 2: получить паёк и воду (после голосования О / Х)',
+    getRation
+  );
 
   // Стойка обмена припасов (в задней левой части зала)
   box(-4.8,.9,15.2,3.0,1.8,1.5,0x7d8d86);
@@ -1150,9 +1238,10 @@ function buildDorm(){
   buildBunkStack(4.8,15.2,2,1,false,0);
   solid(4.8,15.2,2.6,3.6);
   label('ТВОЯ КОЙКА (№456)',4.8,3.45,15.2,.58);
-  addInteract(4.8,12.6,'E · сон и переход к следующему утру',bedMenu);
+  addInteract(4.8,12.6,state.round===0?'E · койка №456 (отправиться на первую игру или разведку)':'E · сон и переход к следующему утру',bedMenu);
 
-  // Охрана в общежитии (по бокам от белой арки, не загораживая белые двери и входы в туалет)
+  // Охрана в общежитии: Офицер с квадратом (□) и солдаты (△ / ○) у белой арки
+  let guardManager=person(0,-19.1,0xe33c70,'□',true);
   person(-3.5,-18.8,0xe33c70,'○',true);
   person(3.5,-18.8,0xe33c70,'△',true);
   person(-8.2,-18.8,0xe33c70,'□',true);
@@ -1160,43 +1249,237 @@ function buildDorm(){
 
   player.z=14;player.x=0;
   bounds={minX:-15.1,maxX:15.1,minZ:-32.3,maxZ:19.1};
-  roundData={dayClock:160,night:false,stealth:false,piggy,bunkSpots,hubNpcs:[],chatFeed:[]};
+  roundData={dayClock:160,night:false,stealth:false,piggy,ledMesh:led,guardManager,bunkSpots,hubNpcs:[],chatFeed:[],cutsceneCam:null};
   initHubLife();
+  refreshHubObjective();
 
-  setObjective(
-    state.round===0?'ДЕНЬ 1 · ПЕРЕД ПЕРВОЙ ИГРОЙ':`ДЕНЬ ${state.day} · ВЕЧЕР ПОСЛЕ ИГРЫ`,
-    state.round===0
-      ?`В зале 456 игроков. Получи еду, осмотри туалет (два входа слева и справа от белой арки) и копилку, пообщайся с NPC (G — сводка зала).`
-      :`«${TITLES[state.round-1]}» позади. NPC едят, спорят, спят и ходят в туалет. Поужинай и поговори с ними: утром дня ${state.round+1} — «${TITLES[state.round]}».`
-  );
-
-  if(!state.daily['hubIntroSession'+state.round]){
+  if(state.round===0&&!state.daily['hubIntroSession0']){
+    state.daily['hubIntroSession0']=true;save();
+    startDay1Cutscene(0);
+  }else if(state.round>0&&!state.daily['hubIntroSession'+state.round]){
     state.daily['hubIntroSession'+state.round]=true;save();
     openModal(
-      state.round===0?'День 1 · Общежитие':`Вечер дня ${state.day} · Осталось ${SURVIVOR_COUNTS[state.round]} игроков`,
-      `<p>${state.round===0
-        ?'Ты — игрок №456 среди сотен незнакомцев. У каждого свой характер, а у некоторых есть полезные в играх навыки из прошлой жизни.'
-        :`«${TITLES[state.round-1]}» позади. В копилку упали новые деньги, а выжившие едят, спорят, уходят в туалет и готовятся ко сну.`}</p>`,
-      [{text:'В зал',primary:true,fn:()=>closeModal()}],
-      'ОБЩЕЖИТИЕ'
+      `После игры «${TITLES[state.round-1]}» · Осталось ${SURVIVOR_COUNTS[state.round]} из 456`,
+      `<p class="lead">В прозрачную копилку под потолком упали деньги за выбывших: сейчас там <b>${PRIZE_BILLIONS[state.round]} млрд вон (₩)</b>.</p>
+       <p>По правилам общежития после завершения игры действует строгий порядок:</p>
+       <ol>
+         <li><b>Сначала — голосование (О / Х):</b> подойди к центральному пульту под копилкой и отдай голос за продолжение игр (<b>О</b>) или их прекращение по 3-му пункту договора (<b>Х</b>).</li>
+         <li><b>Затем — выдача еды и воды:</b> сразу после голосования солдаты откроют раздачу пайков и воды на стойке слева.</li>
+       </ol>`,
+      [
+        {text:'Подойти к пульту голосования (О / Х)',primary:true,fn:()=>inspectPiggyVote()},
+        {text:'Осмотреться в зале',fn:()=>closeModal()}
+      ],
+      'ВЕЧЕР ПОСЛЕ ИСПЫТАНИЯ'
     );
   }else{
     save();closeModal();
   }
 }
 
-/* Система автономной жизни NPC: общение друг с другом, еда, сон на койках, поход в туалет, осмотр копилки */
+function refreshHubObjective(){
+  if(state.round===0){
+    setObjective(
+      'ДЕНЬ 1 · ПЕРЕД ПЕРВОЙ ИГРОЙ (456 УЧАСТНИКОВ)',
+      'Договор о добровольном участии подписан. Голосование (О/Х) и выдача еды будут ТОЛЬКО после первой игры. Пообщайся с игроками, осмотри туалет и выходи через белые ворота (или у койки №456).'
+    );
+  }else if(!state.daily['votedRound'+state.round]){
+    setObjective(
+      `ДЕНЬ ${state.day} · ПОСЛЕ ИГРЫ · ШАГ 1: ГОЛОСОВАНИЕ (О / Х)`,
+      `«${TITLES[state.round-1]}» позади (в копилке ${PRIZE_BILLIONS[state.round]} млрд ₩). Сначала проголосуй (О или Х) у центрального пульта под копилкой — после голосования откроется выдача пайка и воды!`
+    );
+  }else if(!state.daily['mealSession'+state.round]){
+    setObjective(
+      `ДЕНЬ ${state.day} · ПОСЛЕ ГОЛОСОВАНИЯ · ШАГ 2: ВЫДАЧА ПАЙКА`,
+      `Голосование завершено. Теперь получи свой паёк и воду на стойке раздачи слева (x = -10, z = -17), поделись едой с союзниками и ложись спать на койку №456.`
+    );
+  }else{
+    setObjective(
+      `ДЕНЬ ${state.day} · ВЕЧЕР ПОСЛЕ ГОЛОСОВАНИЯ И УЖИНА`,
+      `Паёк получен. Общайся с выжившими, исследуй вентиляцию в туалете или ложись спать на койку №456 (утром дня ${state.round+1} — «${TITLES[state.round]}»).`
+    );
+  }
+}
+
+/* КАТ-СЦЕНА 1-ГО ДНЯ ПЕРЕД ПЕРВОЙ ИГРОЙ (по мотивам 1-й серии 1 сезона и 3-й серии 2 сезона):
+   1) Пробуждение 456 игроков в зелёных костюмах и шок от пропажи вещей;
+   2) Жалобы и крики игроков солдатам на усыпление газом, тайный привоз, переодевание и изъятие всех личных вещей;
+   3) Показ солдатами видео-досье игроков и их огромных сумм долга на экране над аркой;
+   4) Заявление офицера (□) о полной добровольности игр;
+   5) Подписание договора о согласии на участие из 3 пунктов. */
+function setCutsceneCamera(x,y,z,pitch,yaw,showDossier=false){
+  if(!roundData)return;
+  roundData.cutsceneCam={x,y,z,pitch,yaw};
+  if(roundData.ledMesh){
+    roundData.ledMesh.material=showDossier?makeDebtDossierBoard():makeLedBoard(state.round);
+  }
+  camera.position.set(x,y,z);
+  camera.rotation.order='YXZ';
+  camera.rotation.set(pitch,yaw,0);
+  if(renderer&&scene)renderer.render(scene,camera);
+}
+
+function startDay1Cutscene(step=0){
+  let p0=PEOPLE[0]||{num:'101',trait:'Дерзкий',debtAmount:'1,38 млрд ₩',debtReason:'игорные долги и ростовщики',complainLine:'Вы усыпили нас в фургоне, переодели и забрали все вещи!'};
+  let p1=PEOPLE[1]||{num:'218',trait:'Рассудительный',debtAmount:'6,0 млрд ₩',debtReason:'фьючерсы и растрата активов',complainLine:'Где мои документы, часы и телефон?! Куда нас привезли?!'};
+  let p2=PEOPLE[2]||{num:'333',trait:'Хитрый',debtAmount:'1,8 млрд ₩',debtReason:'крах криптопроекта и иски',complainLine:'Верните смартфон и одежду! Почему мы все в зелёной форме с номерами?!'};
+  let p3=PEOPLE[3]||{num:'230',trait:'Нервный',debtAmount:'1,19 млрд ₩',debtReason:'маржинальные долги и кредиты',complainLine:'Пока мы были без сознания, у нас забрали вообще всё из карманов!'};
+  let p4=PEOPLE[4]||{num:'067',trait:'Осторожный',debtAmount:'890 млн ₩',debtReason:'долги посредникам и клинике',complainLine:'Вы не имеете права удерживать нас в закрытом бункере!'};
+  let p5=PEOPLE[5]||{num:'390',trait:'Добродушный',debtAmount:'750 млн ₩',debtReason:'кредиты и подпольные ставки',complainLine:'Обещали обычный заработок по визитке, а привезли неизвестно на какой остров!'};
+
+  if(step===0){
+    beep(420,.1);
+    setCutsceneCamera(-3.8,3.1,11.5,-.14,-.22,false);
+    openModal(
+      'Сцена 1 из 5 · Пробуждение 456 игроков на острове',
+      `<p class="lead">Ты открываешь глаза на многоярусной железной койке в огромном зале без окон. На груди нашит номер <b>456</b>.</p>
+       <p>Вокруг на четырёхъярусных каркасах приходят в себя сотни незнакомцев (от <b>№001</b> до <b>№456</b>). Всех до единого переодели в одинаковые зелёные спортивные костюмы и белые тапочки. Люди в панике хлопают себя по пустым карманам:</p>
+       <div class="results">
+         <p><b>Игрок №${esc(p3.num)} (${esc(p3.trait)}):</b> «Голова раскалывается... Последнее, что я помню — я позвонил по визитке с фигурами, сел в ночной фургон, из вентиляции пошёл сладковатый газ, и я вырубился!»</p>
+         <p><b>Игрок №${esc(p0.num)} (${esc(p0.trait)}):</b> «Эй! Где мой телефон?! Где бумажник, часы, куртка и ключи?! У меня вытащили вообще всё, пока я спал!»</p>
+         <p><b>Игрок №${esc(p1.num)} (${esc(p1.trait)}):</b> «Связи нет, окон нет, ровно 456 коек. Нас тайно вывезли далеко от города и переодели по номерам».</p>
+       </div>`,
+      [
+        {text:'Далее: Выход солдат и жалобы игроков →',primary:true,fn:()=>startDay1Cutscene(1)},
+        {text:'Пропустить кат-сцену и подписать договор',fn:()=>finishDay1Cutscene()}
+      ],
+      'КАТ-СЦЕНА ДНЯ 1 · ПРОБУЖДЕНИЕ В ОБЩЕЖИТИИ'
+    );
+  }else if(step===1){
+    beep(510,.12);
+    setCutsceneCamera(-1.4,1.78,-13.2,.04,-.12,false);
+    openModal(
+      'Сцена 2 из 5 · Жалобы игроков солдатам в масках',
+      `<p class="lead">Под звуки классической фанфары белые двери в глубине арки открываются. На чёрные ступени выходят солдаты в розовых комбинезонах с масками <b>○</b>, <b>△</b> и Офицер с квадратом <b>□</b>.</p>
+       <p>Толпа игроков бросается к ступеням, наперебой выкрикивая жалобы и требуя вернуть вещи:</p>
+       <div class="results">
+         <p><b>Игрок №${esc(p0.num)} (кричит солдатам):</b> «${esc(p0.complainLine)}»</p>
+         <p><b>Игрок №${esc(p2.num)} (возмущённо):</b> «${esc(p2.complainLine)}»</p>
+         <p><b>Игрок №${esc(p5.num)} (из толпы):</b> «${esc(p5.complainLine)} Это похищение! Верните одежду, телефоны и отвезите нас обратно!»</p>
+         <p><b>Офицер в маске с квадратом (□):</b> «Прошу соблюдать спокойствие. Все ваши вещи, телефоны и одежда находятся в сохранности и будут возвращены. Мы никого не привозили силой — каждый из вас сам позвонил нам и сам сел в машину».</p>
+       </div>`,
+      [
+        {text:'Далее: Солдаты показывают игроков и их суммы долга →',primary:true,fn:()=>startDay1Cutscene(2)},
+        {text:'← Назад',fn:()=>startDay1Cutscene(0)}
+      ],
+      'КАТ-СЦЕНА ДНЯ 1 · ЖАЛОБЫ СОЛДАТАМ'
+    );
+  }else if(step===2){
+    beep(340,.14);
+    setCutsceneCamera(0,2.15,-12.6,.22,0,true);
+    openModal(
+      'Сцена 3 из 5 · Солдаты показывают досье игроков и суммы их долга',
+      `<p class="lead">Офицер (□) нажимает кнопку пульта, и на огромном экране над белой аркой вспыхивает досье на участников зала:</p>
+       <p>«Все вы оказались в безвыходном положении. Позвольте напомнить каждому из вас ваши реальные долги во внешнем мире» — на экране появляются записи игры в <i>ттакчи</i> с вербовщиком и точные суммы долгов:</p>
+       <div class="results">
+         <p><b>📋 Игрок №${esc(p0.num)} (${esc(p0.trait)}):</b> ${esc(p0.debtReason)} — <b style="color:#ff7b9c">сумма долга: ${esc(p0.debtAmount)}</b></p>
+         <p><b>📋 Игрок №${esc(p1.num)} (${esc(p1.trait)}):</b> ${esc(p1.debtReason)} — <b style="color:#ff7b9c">сумма долга: ${esc(p1.debtAmount)}</b></p>
+         <p><b>📋 Игрок №${esc(p2.num)} (${esc(p2.trait)}):</b> ${esc(p2.debtReason)} — <b style="color:#ff7b9c">сумма долга: ${esc(p2.debtAmount)}</b></p>
+         <p><b>📋 Игрок №${esc(p3.num)} (${esc(p3.trait)}):</b> ${esc(p3.debtReason)} — <b style="color:#ff7b9c">сумма долга: ${esc(p3.debtAmount)}</b></p>
+         <p><b>📋 Игрок №456 (ТЫ):</b> просроченные кредиты, ставки и расписка у ростовщиков об отказе от физических прав — <b style="color:#ffd86b">сумма долга: 456 000 000 ₩ (456 млн вон)</b></p>
+       </div>
+       <p class="small">Крики и возмущение в зале мгновенно стихают. Участники опускают взгляды, осознавая, что снаружи их ждут только коллекторы, тюрьма или расправа.</p>`,
+      [
+        {text:'Далее: О добровольности участия в играх →',primary:true,fn:()=>startDay1Cutscene(3)},
+        {text:'← Назад к жалобам игроков',fn:()=>startDay1Cutscene(1)}
+      ],
+      'КАТ-СЦЕНА ДНЯ 1 · ДОСЬЕ И СУММЫ ДОЛГОВ'
+    );
+  }else if(step===3){
+    beep(470,.1);
+    setCutsceneCamera(2.1,2.0,-12.2,.12,.18,true);
+    openModal(
+      'Сцена 4 из 5 · Солдаты указывают на добровольность игр',
+      `<p class="lead">Офицер с квадратом (□) обводит взглядом притихший зал из 456 человек и указывает на огромную пустую копилку под потолком:</p>
+       <div class="results">
+         <p><b>Офицер (□):</b> «Мы не принуждаем вас ни к чему. <b>Участие в этих играх является строго добровольным.</b> Мы лишь предоставляем последний равный шанс тем, кто оказался на самом дне долговой ямы».</p>
+         <p><b>Офицер (□):</b> «В течение шести дней вы сыграете в шесть детских игр. Те, кто выиграет все шесть игр, получат огромный денежный приз, который покроет все ваши долги с лихвой».</p>
+         <p><b>Игрок №${esc(p1.num)} (${esc(p1.trait)}):</b> «Почему копилка сейчас пуста? И когда нам дадут еду и право проголосовать?»</p>
+         <p><b>Офицер (□):</b> «Призовой фонд наполняется по итогам испытаний. <b>Голосование (О / Х), а сразу за ним и выдача пайков и воды проводятся только ПОСЛЕ завершения игры.</b> Сейчас каждый, кто готов играть добровольно, должен подписать договор».</p>
+       </div>`,
+      [
+        {text:'Далее: Перейти к подписанию договора о согласии →',primary:true,fn:()=>startDay1Cutscene(4)},
+        {text:'← Назад к досье долгов',fn:()=>startDay1Cutscene(2)}
+      ],
+      'КАТ-СЦЕНА ДНЯ 1 · ДОБРОВОЛЬНОСТЬ ИГР'
+    );
+  }else{
+    beep(590,.12);
+    setCutsceneCamera(0,1.75,-14.2,.02,0,false);
+    openModal(
+      'Сцена 5 из 5 · Договор о согласии на участие в играх (○ △ □)',
+      `<p class="lead">Солдаты с кругами (○) раздают бланки согласия. Один за другим участники вокруг тебя подписывают документ. Перед тобой бланк <b>Игрока №456</b>:</p>
+       <div class="results" style="border-left:4px solid #75e1ba;padding-left:12px">
+         <p><b>📄 ФОРМА СОГЛАСИЯ ИГРОКА (ДОГОВОР ОБ УЧАСТИИ)</b></p>
+         <p><b>Пункт 1.</b> Игроку не разрешается самовольно прекращать игру.</p>
+         <p><b>Пункт 2.</b> Игрок, отказавшийся играть, считается выбывшим.</p>
+         <p><b>Пункт 3.</b> Игры могут быть прекращены, если за это проголосует большинство участников <i>(голосование О / Х, а затем выдача еды проводятся после завершения каждого испытания)</i>.</p>
+         <p class="small">Я, <b>Игрок №456</b> (сумма долга: <b>456 млн ₩</b>), подтверждаю добровольное согласие на участие в играх.</p>
+       </div>`,
+      [
+        {text:'✍️ Подписать договор о согласии (Игрок №456)',primary:true,fn:()=>finishDay1Cutscene()},
+        {text:'← Пересмотреть кат-сцену сначала',fn:()=>startDay1Cutscene(0)}
+      ],
+      'КАТ-СЦЕНА ДНЯ 1 · ПОДПИСАНИЕ ДОГОВОРА'
+    );
+  }
+}
+
+function finishDay1Cutscene(){
+  state.daily.contractSigned=true;
+  save();
+  beep(680,.15);
+  closeModal();
+  toast('Договор об участии подписан! Осмотри зал или иди к белым воротам на первую игру.');
+}
+
+function openTrialGates(){
+  if(state.round===0){
+    openModal(
+      'Белые ворота в глубине арки · Выход на первую игру',
+      `<p class="lead">Первое испытание: <b>«${TITLES[0]}»</b> (в строю все 456 участников).</p>
+       <p>Договор о добровольном участии из трёх пунктов подписан. По правилам <b>голосование (О / Х) и последующая выдача пайков и воды</b> состоятся сразу после возвращения с первой игры.</p>`,
+      [
+        {text:'Выйти через белые ворота на первую игру («Тише едешь»)',primary:true,fn:()=>startRound()},
+        {text:'Пересмотреть кат-сцену 1-го дня и договор',fn:()=>startDay1Cutscene(0)},
+        {text:'Остаться в общежитии и поговорить с игроками',fn:()=>closeModal()}
+      ],
+      'ВЫХОД НА ИСПЫТАНИЕ'
+    );
+  }else{
+    let voted=!!state.daily['votedRound'+state.round], fed=!!state.daily['mealSession'+state.round];
+    openModal(
+      'Белые ворота закрыты до утреннего сигнала',
+      `<p>Сейчас вечер после игры <b>«${TITLES[state.round-1]}»</b>. Следующее испытание (<b>«${TITLES[state.round]}»</b>) начнётся утром после сна.</p>
+       <p><b>Вечерний распорядок после игры:</b></p>
+       <ul>
+         <li>1. Голосование (О / Х) у пульта под копилкой: <b>${voted?'✅ Выполнено':'⏳ Нужно проголосовать'}</b></li>
+         <li>2. Получение пайка и воды на раздаче: <b>${fed?'✅ Получено':voted?'⏳ Открыто — подойди к стойке раздачи':'🔒 Откроется после голосования'}</b></li>
+         <li>3. Ночной отдых или вылазка: у твоей койки №456 в задней части зала.</li>
+       </ul>`,
+      [
+        ...(!voted?[{text:'Перейти к голосованию (О / Х)',primary:true,fn:()=>inspectPiggyVote()}]:[]),
+        ...(voted&&!fed?[{text:'Получить паёк и воду',primary:true,fn:()=>{closeModal();getRation();}}]:[]),
+        {text:'Перейти к меню сна (койка №456)',primary:voted&&fed,fn:()=>bedMenu()},
+        {text:'Отойти от ворот',fn:()=>closeModal()}
+      ],
+      'РАСПОРЯДОК ОБЩЕЖИТИЯ'
+    );
+  }
+}
+
+/* Система автономной жизни NPC: до первой игры — жалобы солдатам, обсуждение долгов и договора; после игры — сначала голосование, затем еда! */
 const ACT_LABELS={
+  complain:'😠 Жалуется солдатам',
   talk_pair:'💬 Общается',
   eat:'🍱 Ест паёк',
-  sleep:'💤 Спит на койке',
+  sleep:'💤 У койки',
   toilet:'🚻 В туалете',
-  piggy:'🐷 У копилки'
+  piggy:'🗳️ У пульта О/Х'
 };
 
 function initHubLife(){
   let r=roundData;
-  // Размещаем NPC вдоль многоярусных коек, у входов в туалет и у линии X/O (как на кадре из сериала), оставляя центральный обзор открытым
   let baseSpots=[
     [-4.8,3.2],[4.8,3.0],[-5.2,-2.5],[5.2,-2.8],[-9.5,-15.2],[5.8,-15.0],
     [-6.2,7.5],[-4.2,-27.5],[6.2,7.2],[-6.4,-7.5],[6.4,-7.2],[-4.6,-10.5],
@@ -1222,7 +1505,7 @@ function initHubLife(){
     let num=CROWD_NUMS[i];
     let [x,z]=crowdSpots[i%crowdSpots.length];
     let g=person(x,z,SUIT_COLORS[i%SUIT_COLORS.length],num,false,{hair:HAIRS[i%HAIRS.length],hairColor:HAIR_COLORS[i%HAIR_COLORS.length],skin:SKINS[i%SKINS.length],glasses:i%5===0});
-    let item={g,npc:null,named:false,id:'crowd_'+num,name:`Игрок №${num}`,num,activity:'eat',timer:3+i*1.3,tx:x,tz:z,partner:null,line:EAT_LINES[i%EAT_LINES.length]};
+    let item={g,npc:null,named:false,id:'crowd_'+num,name:`Игрок №${num}`,num,activity:'talk_pair',timer:3+i*1.3,tx:x,tz:z,partner:null,line:EAT_LINES[i%EAT_LINES.length]};
     let inter={x,z,title:`E · Игрок №${num} — заговорить`,fn:()=>talkCrowd(item),mesh:g};
     interactions.push(inter);
     item.inter=inter;
@@ -1234,6 +1517,7 @@ function initHubLife(){
 function assignAllNpcActivities(snap=false){
   let r=roundData;if(!r.hubNpcs)return;
   let chats=PAIR_CHATS[clamp(state.round,0,5)]||PAIR_CHATS[0];
+  let canEatNow=state.round>0&&!!state.daily['votedRound'+state.round];
   r.hubNpcs.forEach(u=>{
     u.partner=null;
     u.g.userData.bodyGroup.rotation.x=0;
@@ -1243,6 +1527,7 @@ function assignAllNpcActivities(snap=false){
   let phaseOffset=Math.floor(gameTime/16)%5;
   let pairSpots=[[-4.4,2.6],[4.4,2.8],[-4.6,-4.2],[4.6,-4.5]];
   let eatSpots=[[-11.2,-15.4],[-9.8,-15.2],[-8.5,-15.6],[-10.8,-14.2],[-9.2,-14.4],[-7.8,-15.2]];
+  let complainSpots=[[-3.2,-16.4],[3.2,-16.4],[-4.8,-15.8],[4.8,-15.8],[-2.2,-15.2],[2.2,-15.2]];
   let toiletSpots=[[-5.2,-30.5],[-2.6,-30.5],[3.2,-30.4],[5.8,-26.5],[5.8,-29.5]];
   let piggySpots=[[-3.4,-11.2],[3.4,-11.2],[-3.8,-8.5],[3.8,-8.5]];
 
@@ -1262,9 +1547,22 @@ function assignAllNpcActivities(snap=false){
     if((u.npc?.perk==='mina'||u.npc?.perk==='vera')&&mod!==1)mod=1;
     if(r.night&&i%2===0)mod=2;
     if(mod===0){
-      let [ex,ez]=eatSpots[i%eatSpots.length];
-      u.activity='eat';u.tx=ex;u.tz=ez;
-      u.line=u.named?u.npc.reactions[clamp(state.round,0,5)]:EAT_LINES[i%EAT_LINES.length];
+      if(state.round===0){
+        // До первой игры еду НЕ выдают — игроки жалуются солдатам у арки на похищение, переодевание и показанные долги!
+        let [cx,cz]=complainSpots[i%complainSpots.length];
+        u.activity='complain';u.tx=cx;u.tz=cz;
+        u.line=u.npc?.complainLine||DEBT_PROFILES[i%DEBT_PROFILES.length].complain;
+      }else if(!canEatNow){
+        // После игры, но ДО голосования — игроки ждут голосования у пульта О/Х!
+        let [gx,gz]=piggySpots[i%piggySpots.length];
+        u.activity='piggy';u.tx=gx;u.tz=gz;
+        u.line='Ждёт голосования (О / Х): «Сначала все должны нажать кнопку, иначе охрана не начнёт раздачу пайков!»';
+      }else{
+        // После игры И после голосования — раздача пайков открыта!
+        let [ex,ez]=eatSpots[i%eatSpots.length];
+        u.activity='eat';u.tx=ex;u.tz=ez;
+        u.line=u.named?u.npc.reactions[clamp(state.round,0,5)]:EAT_LINES[i%EAT_LINES.length];
+      }
     }else if(mod===1){
       let [tx,tz]=toiletSpots[i%toiletSpots.length];
       u.activity='toilet';u.tx=tx;u.tz=tz;
@@ -1272,11 +1570,13 @@ function assignAllNpcActivities(snap=false){
     }else if(mod===2&&r.bunkSpots.length){
       let b=r.bunkSpots[i%r.bunkSpots.length];
       u.activity='sleep';u.tx=b.x;u.tz=b.z;u.bunk=b;
-      u.line=SLEEP_LINES[i%SLEEP_LINES.length];
+      u.line=state.round===0?'Проверяет пустые карманы зелёного костюма: «Забрали телефон, бумажник и часы, а на экране показали мой долг...»':SLEEP_LINES[i%SLEEP_LINES.length];
     }else{
       let [gx,gz]=piggySpots[i%piggySpots.length];
-      u.activity='piggy';u.tx=gx;u.tz=gz;
-      u.line=u.named?u.npc.reactions[clamp(state.round,0,5)]:PIGGY_LINES[i%PIGGY_LINES.length];
+      u.activity=state.round===0?'complain':'piggy';u.tx=gx;u.tz=gz;
+      u.line=state.round===0
+        ?(u.npc?`Вспоминает экран с долгами (${u.npc.debtAmount}): «Солдаты сказали, что игра добровольная, и заставили подписать договор из 3 пунктов».`:'Смотрит на пустую копилку: «Голосование и еда будут только после первой игры...»')
+        :(u.named?u.npc.reactions[clamp(state.round,0,5)]:PIGGY_LINES[i%PIGGY_LINES.length]);
     }
   }
   if(snap){
@@ -1312,7 +1612,6 @@ function stepNpcToward(u,dt){
       tx=doorX;tz=targetBath?-24.8:-16.8;
     }
   }else if(inBath&&cz>-23.8&&Math.abs(tx)<4.4){
-    // Обход задней стенки центральной ниши внутри туалета
     tz=-24.8;
   }
   let dx=tx-cx, dz=tz-cz, d=Math.hypot(dx,dz);
@@ -1332,6 +1631,11 @@ function stepNpcToward(u,dt){
       g.rotation.y=Math.atan2(-pdx,-pdz);
       u.g.userData.a.rotation.x=-.45+Math.sin(gameTime*4+u.g.userData.phase)*.25;
       u.g.userData.b.rotation.x=-.35-Math.sin(gameTime*3.5+u.g.userData.phase)*.22;
+    }else if(u.activity==='complain'){
+      let pdx=0-cx, pdz=-19.0-cz;
+      g.rotation.y=Math.atan2(-pdx,-pdz);
+      u.g.userData.a.rotation.x=-.85+Math.sin(gameTime*6+u.g.userData.phase)*.35;
+      u.g.userData.b.rotation.x=-.45-Math.sin(gameTime*5+u.g.userData.phase)*.25;
     }else if(u.activity==='eat'){
       u.g.userData.propTray.visible=true;
       u.g.userData.b.rotation.x=-.75;
@@ -1372,46 +1676,47 @@ function useRestroomSink(){
 
 function useRestroomStall(){
   let k='stallSession'+state.round;
-  let smuggler=PEOPLE.find(p=>p.perk==='vera');let found=!state.daily[k]&&(allied('vera')||(smuggler&&relation(smuggler)>=1));
+  let smuggler=PEOPLE.find(p=>p.perk==='vera');
+  let found=!state.daily[k];
   if(found){
     state.daily[k]=true;
-    state.tokens+=1;
     state.probes+=1;
+    if(smuggler&&state.allies.includes(smuggler.id))state.tokens+=1;
     save();
-    beep(680,.12);
+    beep(680,.1);
   }
-  openModal('Кабинки туалета',
-    `<p>В кабинках участники прячутся от камер наблюдения и пересчитывают припасы. Некоторые хитрецы прячут здесь найденные мелочи за трубами.</p>
-     <p>${found?'<b>Ты нашёл тайник за трубой:</b> +1 жетон и +1 камешек!':'Подружись с кем-то из ловкачей в зале, чтобы узнать, где спрятана заначка.'}</p>`,
-    [{text:'Вернуться в туалет',primary:true,fn:()=>closeModal()}],
-    'ЛОКАЦИЯ · КАБИНКИ'
+  openModal('Туалет · Кабинки',
+    `<p>Ты осматриваешь ряд кабинок. В сериале именно здесь участники прятали контрабанду, обсуждали тайные союзы и готовились к ночи.</p>
+     <p>${found?`За трубой во второй кабинке найден спрятанный камешек для проверки стекла (+1 камешек${smuggler&&state.allies.includes(smuggler.id)?', +1 жетон от союзника-ловкача':''}).`:'Тайник за трубой в этом перерыве уже проверен.'}</p>`,
+    [{text:'Выйти из кабинки',primary:true,fn:()=>closeModal()}],
+    'ЛОКАЦИЯ · ТУАЛЕТ'
   );
 }
 
 function useRestroomVent(){
   let rIdx=clamp(state.round,0,5);
-  let scout=PEOPLE.find(p=>p.perk==='mina');let canScout=allied('mina')||(scout&&relation(scout)>=1)||state.muralRead;
-  let already=!!state.ventScouted[rIdx];
   let ventClues=[
-    'Через решётку видно огромное песчаное поле и гигантскую куклу-девочку у дерева. Датчики движения выключаются за бетонными тумбами.',
-    'Из шахты тянет запахом жжёного сахара! Внизу охрана разливает растопленную карамель в круглые жестяные баночки с формами.',
-    'Слышен лязг лебёдок: в следующем зале две высокие башни, соединённые толстым канатом над пропастью.',
-    'Охрана раскладывает мешочки по десять стеклянных шариков в декорациях старых глиняных улочек на закате.',
-    'Рабочие протирают двенадцать пар стеклянных плит над бездной: половина из закалённого стекла, половина — из обычного.',
-    'На песчаном дворе расчерчены белой краской круг, треугольник и квадрат для финального поединка.'
+    'Через решётку виден песчаный двор и огромная механическая кукла у дерева. Бетонные блоки во дворе помогут укрыться от её датчиков.',
+    'По вентиляционной шахте тянет горячим жжёным сахаром и карамелью! Рабочие в масках разносят круглые жестяные коробочки и иглы.',
+    'Слышен гул лебёдок и лязг цепей на двух высоких башнях: готовят толстый канат над пропастью. Решат синхронный ритм и упор лёжа!',
+    'За решёткой виден декоративный квартал на закате и мешочки по 10 стеклянных шариков. Нам велят разбиться на пары — но играть придётся друг против друга!',
+    'Слышен звон стекла: рабочие укладывают 12 пар плит над пропастью — обычное и закалённое стекло. Закалённое отличается бликом на грани!',
+    'Внизу расчерчивают песчаный корт с кругом, треугольником и квадратом для финального поединка один на один.'
   ];
-  if(canScout&&!already){
+  let scoutNpc=PEOPLE.find(p=>p.perk==='mina');
+  let canScout=true;
+  if(!state.ventScouted[rIdx]){
     state.ventScouted[rIdx]=true;
     state.probes+=1;
-    if(!state.secrets.includes('vent_'+rIdx))state.secrets.push('vent_'+rIdx);
+    if(scoutNpc)state.trust[scoutNpc.id]=clamp((state.trust[scoutNpc.id]||0)+1,0,5);
     save();
-    beep(740,.15);
+    beep(740,.12);
   }
-  openModal('Вентиляционная шахта под потолком',
-    `<p>В углу туалета решетка вентиляции слегка отогнута — именно через неё в сериале №067 пробиралась под потолком, чтобы подсмотреть подготовку следующей игры.</p>
+  openModal('Туалет · Вентиляционная шахта',
+    `<p>Ты поднимаешься по тумбе к вентиляционной решётке под потолком туалета (как делали участники в сериале, чтобы узнать следующую игру заранее).</p>
      <p>${canScout
-       ?`<b>Разведка через шахту («${TITLES[rIdx]}»):</b><br>«${ventClues[rIdx]}»<br><br><b>Бонус разведки получен:</b> +1 камешек и тактическое преимущество в следующем испытании!`
-       :'Решётка высоко. Найди среди участников разведчика вентиляции или изучи рисунки на стенах зала, чтобы узнать, как безопасно заглянуть в шахту.'}</p>`,
+       ?`<b>Разведка на игру №${rIdx+1} («${TITLES[rIdx]}»):</b><br>«${ventClues[rIdx]}»<br><br><b>Бонус разведки получен:</b> +1 камешек и тактическое преимущество в следующем испытании!`
+       :'Решётка высоко.'}</p>`,
     [{text:'Спуститься на пол',primary:true,fn:()=>closeModal()}],
     'СЕКРЕТ ИЗ СЕРИАЛА · ВЕНТИЛЯЦИЯ'
   );
@@ -1441,28 +1746,69 @@ function inspectMural(){
   );
 }
 
+/* ГОЛОСОВАНИЕ (О / Х) — доступно ТОЛЬКО после завершения игры (state.round >= 1) и открывает раздачу еды! */
+function castDormVote(choice){
+  if(state.round===0){
+    toast('Голосование (О / Х) проводится только после завершения первой игры!');
+    return false;
+  }
+  let firstVote=!state.daily['votedRound'+state.round];
+  state.vote=choice==='O'?'O':'X';
+  state.daily['votedRound'+state.round]=true;
+  if(firstVote){
+    if(state.vote==='X'){
+      PEOPLE.filter(p=>['Добродушный','Осторожный','Спокойный'].includes(p.trait)).slice(0,4).forEach(p=>state.trust[p.id]=clamp((state.trust[p.id]||0)+1,0,5));
+    }else{
+      PEOPLE.filter(p=>['Дерзкий','Хитрый','Рассудительный'].includes(p.trait)).slice(0,4).forEach(p=>state.trust[p.id]=clamp((state.trust[p.id]||0)+1,0,5));
+    }
+    assignAllNpcActivities();
+    refreshHubObjective();
+  }
+  save();
+  beep(state.vote==='X'?580:480,.1);
+  toast(state.vote==='X'
+    ?'Ты нажал Х. С минимальным перевесом игры продолжаются! Открыта выдача пайка и воды.'
+    :'Ты нажал О. Большинство проголосовало за продолжение игр! Открыта выдача пайка и воды.');
+  return true;
+}
+
 function inspectPiggyVote(){
   let surv=SURVIVOR_COUNTS[clamp(state.round,0,6)], prize=PRIZE_BILLIONS[clamp(state.round,0,6)];
-  openModal('Золотая копилка и голосование (О / Х)',
-    `<p class="lead">В игре осталось: <b>${surv}</b> из 456 · В копилке: <b>${prize} млрд вон</b></p>
-     <p>Под прозрачным брюхом золотой свиньи стоит тумба с двумя кнопками из сериала: синий кружок <b>О</b> (продолжить игру ради приза) и красный крестик <b>Х</b> (прекратить игру по 3-му пункту правил).</p>
-     <p>Твоя текущая позиция: <b>${state.vote==='X'?'Х — за прекращение игры и спасение жизней':state.vote==='O'?'О — идти до конца ради приза':'ещё не голосовал'}</b>.</p>
-     <p class="small">Голосование влияет на реплики NPC: добродушные и осторожные участники уважают выбор «Х», а дерзкие и рассудительные — выбор «О».</p>`,
+  if(state.round===0){
+    openModal(
+      'Пустая копилка · Голосование проводится только после игры',
+      `<p class="lead">В зале: <b>456 из 456 участников</b> · В копилке: <b>0.0 млрд вон (пусто)</b></p>
+       <p>Прозрачная золотая свинья под потолком пока пуста — ещё никто не выбыл. Согласно <b>3-му пункту подписанного договора</b>, голосование кнопками <b>О</b> и <b>Х</b>, а затем и раздача пайков проводятся только <b>после завершения испытания</b>.</p>`,
+      [
+        {text:'Выйти через белые ворота на первую игру («Тише едешь»)',primary:true,fn:()=>startRound()},
+        {text:'Посмотреть подписанный договор и кат-сцену 1-го дня',fn:()=>startDay1Cutscene(0)},
+        {text:'Сводка действий всех NPC в зале (G)',fn:showDormOverview},
+        {text:'Отойти от подиума',fn:()=>closeModal()}
+      ],
+      'ДО ПЕРВОЙ ИГРЫ · КОПИЛКА ПУСТА'
+    );
+    return;
+  }
+  let voted=!!state.daily['votedRound'+state.round];
+  let fed=!!state.daily['mealSession'+state.round];
+  let oCount=Math.ceil(surv/2), xCount=surv-oCount;
+  openModal('Золотая копилка и голосование после игры (О / Х)',
+    `<p class="lead">Выжило: <b>${surv}</b> из 456 · В копилке: <b>${prize} млрд вон (₩)</b></p>
+     <p>По правилам после завершения игры <b>«${TITLES[state.round-1]}»</b> сначала проводится обязательное голосование по 3-му пункту договора: синий кружок <b>О</b> (продолжить игры ради приза) или красный крестик <b>Х</b> (прекратить игры). <b>Сразу после твоего голоса открывается выдача пайка и воды.</b></p>
+     <p>Статус голосования за день ${state.day}: <b>${voted?`✅ Завершено (твой выбор: ${state.vote==='X'?'Х — за прекращение игр':'О — продолжать ради приза'} · Табло зала: О — ${oCount}, Х — ${xCount})`:'⏳ Ожидается твой голос (О или Х)'}</b></p>
+     <p class="small">${voted?(fed?'Паёк и вода на этот вечер уже получены.':'Раздача открыта! Теперь ты можешь получить 2 пайка и воду на стойке слева.'):'Добродушные и осторожные участники поддерживают выбор «Х», а дерзкие и рассудительные — выбор «О».'}</p>`,
     [
-      {text:'Нажать красную кнопку Х (За жизнь и союз)',primary:state.vote!=='X',fn:()=>{
-        state.vote='X';
-        PEOPLE.filter(p=>['Добродушный','Осторожный','Спокойный'].includes(p.trait)).slice(0,4).forEach(p=>state.trust[p.id]=clamp((state.trust[p.id]||0)+1,0,5));
-        save();beep(580,.1);toast('Ты нажал Х. Осторожные и добродушные игроки поддержали тебя.');inspectPiggyVote();
+      {text:'Нажать красную кнопку Х (За жизнь и прекращение игр)',primary:!voted||state.vote!=='X',fn:()=>{
+        castDormVote('X');inspectPiggyVote();
       }},
-      {text:'Нажать синюю кнопку О (Идти за призом)',primary:state.vote==='X',fn:()=>{
-        state.vote='O';
-        PEOPLE.filter(p=>['Дерзкий','Хитрый','Рассудительный'].includes(p.trait)).slice(0,4).forEach(p=>state.trust[p.id]=clamp((state.trust[p.id]||0)+1,0,5));
-        save();beep(480,.1);toast('Ты нажал О. Дерзкие и азартные игроки оценили твою решимость.');inspectPiggyVote();
+      {text:'Нажать синюю кнопку О (Продолжить игру за призом)',primary:voted&&state.vote==='X',fn:()=>{
+        castDormVote('O');inspectPiggyVote();
       }},
+      ...(voted&&!fed?[{text:'🍱 Получить паёк и воду (после голосования)',primary:true,fn:()=>{closeModal();getRation();}}]:[]),
       {text:'Сводка действий всех NPC в зале (G)',fn:showDormOverview},
       {text:'Отойти от подиума',fn:()=>closeModal()}
     ],
-    'ЦЕНТР ЗАЛА · КОПИЛКА'
+    'ШАГ 1 ПОСЛЕ ИГРЫ · ГОЛОСОВАНИЕ (О / Х)'
   );
 }
 
@@ -1471,13 +1817,15 @@ function showDormOverview(){
   let rows=roundData.hubNpcs.slice(0,14).map(u=>{
     let act=ACT_LABELS[u.activity]||'В зале';
     let partnerTxt=u.activity==='talk_pair'&&u.partner?` (с ${u.partner.name})`:'';
-    return `<p><b>${esc(u.name)} (№${u.num})</b> — ${act}${esc(partnerTxt)}<br><span class="small">${esc(u.line)}</span></p>`;
+    let debtTxt=u.npc?.debtAmount?` · <span style="color:#ff8da8">долг: ${esc(u.npc.debtAmount)}</span>`:'';
+    return `<p><b>${esc(u.name)} (№${u.num})</b>${debtTxt} — ${act}${esc(partnerTxt)}<br><span class="small">${esc(u.line)}</span></p>`;
   }).join('');
-  openModal('Жизнь общежития и реакции NPC',
-    `<p>В зале и туалете сейчас <b>${roundData.hubNpcs.length}</b> активных моделей участников (и 4 охранника). Они свободно перемещаются между общим залом, стойкой еды, койками и туалетом.</p>
+  openModal('Жизнь общежития, долги и реакции NPC',
+    `<p>В зале и туалете сейчас <b>${roundData.hubNpcs.length}</b> активных моделей участников (и 5 охранников). ${state.round===0?'Перед первой игрой участники возмущаются тем, что их привезли спящими и забрали вещи, и обсуждают показанные солдатами долги и договор из 3 пунктов.':(!state.daily['votedRound'+state.round]?'Участники ждут завершения голосования (О / Х), после которого начнётся раздача пайков.':'Голосование позади — участники получают пайки, общаются и ходят в туалет.')}</p>
      <div class="results">${rows}</div>`,
     [
       {text:'Переключить сцену / сменить занятия NPC',primary:true,fn:()=>{gameTime+=17;assignAllNpcActivities();showDormOverview();}},
+      ...(state.round===0?[{text:'Посмотреть кат-сцену 1-го дня и договор (3 пункта)',fn:()=>startDay1Cutscene(0)}]:[]),
       {text:'Вернуться в зал',fn:()=>closeModal()}
     ],
     'СВОДКА ДЕЙСТВИЙ NPC (КЛАВИША G)'
@@ -1490,7 +1838,7 @@ function talkCrowd(u){
     `<p class="lead">Выживший участник в зелёном костюме №${u.num}</p>
      <p><b>Что делает сейчас:</b> ${act}${u.partner?` с ${esc(u.partner.name)}`:''}</p>
      <p>«${esc(u.line)}»</p>
-     <p class="small">Участники массовки живут по расписанию зала: стоят за пайком, уходят умываться в туалет, спят на многоярусных койках и обсуждают прошедшую игру.</p>`,
+     <p class="small">${state.round===0?'Как и все 456 человек, очнулся здесь после газа в фургоне без телефона и личных вещей, увидел свой долг на экране солдат и подписал договор из 3 пунктов.':'Участники массовки живут по расписанию зала: сначала голосуют (О / Х) после игры, затем получают паёк, уходят умываться в туалет и спят на койках.'}</p>`,
     [
       {text:'Поддержать разговор (+бодрость)',primary:true,fn:()=>{state.energy=clamp(state.energy+5,0,100);toast(`Игрок №${u.num} кивнул тебе. +5 сил.`);closeModal();}},
       ...(u.activity==='talk_pair'&&u.partner?[{text:`Послушать их диалог с ${u.partner.name}`,fn:()=>openModal(`Разговор: ${u.name} и ${u.partner.name}`,`<p><b>${esc(u.name)}:</b> «${esc(u.line)}»</p><p><b>${esc(u.partner.name)}:</b> «${esc(u.partner.line)}»</p>`,[{text:'Отойти',primary:true,fn:()=>closeModal()}])}]:[]),
@@ -1500,11 +1848,44 @@ function talkCrowd(u){
   );
 }
 
+/* ВЫДАЧА ЕДЫ И ВОДЫ — работает ТОЛЬКО после игры (state.round >= 1) и ТОЛЬКО после голосования (state.daily['votedRound'+state.round])! */
 function getRation(){
+  if(state.round===0){
+    beep(300,.1);
+    toast('До первой игры еду не выдают! Голосование и раздача пайка будут после испытания.');
+    openModal(
+      'Выдача пайка закрыта до конца первой игры',
+      `<p class="lead">Солдат с квадратом (□) преграждает путь к пустой стойке раздачи:</p>
+       <p>«Перед первой игрой питание не выдаётся. Сначала все 456 участников проходят первое испытание, затем проводится голосование (<b>О / Х</b>) по 3-му пункту договора, и только после голосования начинается выдача пайков и воды».</p>`,
+      [
+        {text:'Выйти через белые ворота на первую игру («Тише едешь»)',primary:true,fn:()=>startRound()},
+        {text:'Отойти от стойки',fn:()=>closeModal()}
+      ],
+      'РАСПОРЯДОК · ТОЛЬКО ПОСЛЕ ИГРЫ'
+    );
+    return false;
+  }
+  if(!state.daily['votedRound'+state.round]){
+    beep(320,.1);
+    toast('Сначала проголосуй (О или Х) у центрального пульта под копилкой!');
+    openModal(
+      'Сначала — обязательное голосование (О / Х)',
+      `<p class="lead">Солдат с треугольником (△) у раздачи указывает на центральный пульт под копилкой:</p>
+       <p>«По правилам общежития после игры <b>сначала проводится голосование (О или Х)</b>, а затем начинается раздача еды и воды. Отдайте свой голос на центральном пульте — и сразу получите свой паёк!»</p>`,
+      [
+        {text:'Подойти к пульту голосования (О / Х)',primary:true,fn:()=>inspectPiggyVote()},
+        {text:'Отойти',fn:()=>closeModal()}
+      ],
+      'ШАГ 1: ГОЛОСОВАНИЕ → ШАГ 2: ЕДА'
+    );
+    return false;
+  }
   let k='mealSession'+state.round;
-  if(state.daily[k]){toast('Еда на этот перерыв уже получена. Дополнительную еду можно выменять.');return;}
+  if(state.daily[k]){toast('Еда на этот перерыв уже получена. Дополнительную еду можно выменять.');return false;}
   state.daily[k]=true;state.food+=2;state.water+=1;state.hunger=clamp(state.hunger+8,0,100);save();beep(620);
-  toast('Выдано: 2 пайка и 1 вода. F — съесть паёк; едой можно делиться с NPC.');
+  refreshHubObjective();
+  toast('Выдано после голосования: 2 пайка и 1 вода! F — съесть паёк; едой можно делиться с NPC.');
+  return true;
 }
 function eat(){
   if(!started||mode==='carve'||paused)return;
@@ -1533,10 +1914,13 @@ function talk(n){
   let roleTxt=known?n.role:`Характер: ${n.trait} (способность неизвестна)`;
   let ctxLabel=u?.activity==='toilet'?'Поговорить в туалете':u?.activity==='eat'?'Поесть рядом':u?.activity==='sleep'?'Проверить у койки':u?.activity==='talk_pair'&&u.partner?`Вступить в разговор с №${u.partner.num}`:'Обсудить копилку';
 
+  let debtLine=n.debtAmount?`<p class="small">Досье солдат: <b>долг ${esc(n.debtAmount)}</b> (${esc(n.debtReason)})</p>`:'';
+  let displayReaction=(state.round===0&&u?.activity==='complain'&&n.complainLine)?n.complainLine:reaction;
   openModal(`Игрок №${n.num}`,
     `<p class="lead">${esc(roleTxt)} · <span style="color:#75e1ba">${act}</span>${partnerTxt}</p>
+     ${debtLine}
      <p>Доверие: <b>${r}/5</b> ${ally?'· <b>в твоём союзе</b>':''}</p>
-     <p>«${esc(reaction)}»</p>`,
+     <p>«${esc(displayReaction)}»</p>`,
     [
       {text:'Поговорить и узнать о прошлом',primary:true,fn:()=>{
         let key=n.id+'talkSession'+state.round;
@@ -1695,13 +2079,19 @@ function shop(){
 }
 function trade(kind,amount,cost){if(state.tokens<cost){toast('Не хватает жетонов.');return;}state.tokens-=cost;state[kind]+=amount;save();shop();beep(500);}
 function bedMenu(){
+  let voted=state.round>0&&!!state.daily['votedRound'+state.round];
+  let fed=state.round>0&&!!state.daily['mealSession'+state.round];
   openModal(
-    state.round===0?'Готов к первой игре?':roundData.night?'Ночь перед новым игровым днём':'Завершить вечер и лечь спать',
+    state.round===0?'Койка №456 · Перед первой игрой':roundData.night?'Ночь перед новым игровым днём':'Завершить вечер и лечь спать',
     `<p>${state.round===0?'Первая игра сегодня':`Следующая игра — утром дня ${state.round+1}`}: <b>${TITLES[state.round]}</b>.</p>
-     <p>${state.round===0?'Перед первой игрой можно получить еду, осмотреть туалет и познакомиться с участниками.':'Сон завершает ночь и переводит время на утро следующего дня. Новая игра начнётся сразу утром, без отдельного дня отдыха.'} Не забудь получить паёк.</p>
-     <p class="small">${roundData.stealth?'Вернись с найденными припасами и заверши вылазку.':'Можно рискнуть ночью: собрать три ящика припасов в темноте, избегая прожекторов охраны (награда — 2 жетона и 2 камешка).'}</p>`,
+     <p>${state.round===0
+       ?'Договор о добровольном участии (3 пункта) подписан. Голосование (О / Х) и выдача еды состоятся только после завершения первой игры.'
+       :`Вечерний порядок после игры: <b>1) Голосование (О/Х): ${voted?'✅':'⏳'}</b> → <b>2) Паёк и вода: ${fed?'✅':'⏳'}</b> → <b>3) Сон до утра</b>.`}</p>
+     <p class="small">${roundData.stealth?'Вернись с найденными припасами и заверши вылазку.':'Можно также рискнуть ночью: собрать три ящика припасов в темноте, избегая прожекторов охраны (награда — 2 жетона и 2 камешка).'}</p>`,
     [
-      {text:state.round===0?'Отдохнуть и начать первую игру':`Лечь спать → игра утром дня ${state.round+1}`,primary:true,fn:()=>{
+      ...(state.round>0&&!voted&&!roundData.stealth?[{text:'Сначала проголосовать (О / Х) у копилки',primary:true,fn:()=>inspectPiggyVote()}]:[]),
+      ...(state.round>0&&voted&&!fed&&!roundData.stealth?[{text:'Получить паёк и воду после голосования',primary:true,fn:()=>{closeModal();getRation();}}]:[]),
+      {text:state.round===0?'Начать первую игру («Тише едешь»)':`Лечь спать → игра утром дня ${state.round+1}`,primary:state.round===0||(voted&&fed),fn:()=>{
         if(roundData.stealth){toast('Сначала заверши вылазку.');return;}
         state.hp=clamp(state.hp+25,0,100);state.energy=100;state.hunger=clamp(state.hunger-10,0,100);save();startRound();
       }},
@@ -2395,8 +2785,14 @@ function tick(){
     if(state&&['hub','red','final'].includes(mode))state.hunger=clamp(state.hunger-dt*.028,0,100);
   }
   let head=keys.KeyC?.95:1.65,bob=!paused&&(keys.KeyW||keys.KeyS)&&mode!=='tug'&&mode!=='carve'?Math.sin(gameTime*9)*.035:0;
-  camera.position.set(player.x,player.y+head+bob,player.z);
-  camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
+  if(mode==='hub'&&roundData&&roundData.cutsceneCam&&overlay){
+    let cc=roundData.cutsceneCam;
+    camera.position.set(cc.x,cc.y,cc.z);
+    camera.rotation.order='YXZ';camera.rotation.set(cc.pitch,cc.yaw,0);
+  }else{
+    camera.position.set(player.x,player.y+head+bob,player.z);
+    camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
+  }
   if(mode==='menu'){camera.position.set(14,10,22);camera.lookAt(0,2,-4);}
   if(mode==='ending'){camera.position.set(0,3,8);camera.lookAt(0,2,-8);}
   renderer.render(scene,camera);

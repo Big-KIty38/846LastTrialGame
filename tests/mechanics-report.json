@@ -1,10 +1,26 @@
 {
   "tests": [
     {
+      "test": "day1 cutscene and contract",
+      "result": {
+        "s0": "Сцена 1 из 5 · Пробуждение 456 игроков на острове",
+        "s1": true,
+        "s2": true,
+        "s3": true,
+        "s4": true,
+        "contractSigned": true,
+        "blockedVoteBeforeGame": true,
+        "blockedFoodBeforeGame": true
+      }
+    },
+    {
       "test": "food and trust",
       "result": {
+        "blockedBeforeVote": true,
+        "voted": true,
+        "gotFoodAfterVote": true,
         "no_duplicate_food": true,
-        "trust": 2,
+        "trust": 3,
         "allies": [
           "p5",
           "tim"
@@ -15,8 +31,8 @@
       "test": "red-light fair crossing",
       "result": {
         "mode": "result",
-        "steps": 1629,
-        "z": -34.012246485699926,
+        "steps": 1476,
+        "z": -34.13367884157453,
         "round": 1
       }
     },
