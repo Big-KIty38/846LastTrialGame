@@ -309,37 +309,36 @@ function makeTex(kind,repeatX=1,repeatY=1){
   }else if(kind==='dormLowerWall'){
     cv.width=512;cv.height=256;
     c=cv.getContext('2d');
-    c.fillStyle='#e5ecee';c.fillRect(0,0,512,256);
+    c.fillStyle='#e8eff1';c.fillRect(0,0,512,256);
     // Вертикальные рельефные панели белой стены
     for(let x=0;x<512;x+=16){
-      c.fillStyle=x%32===0?'#d6e0e3':'#eef3f5';
+      c.fillStyle=x%32===0?'#cdd8dc':'#f3f7f8';
       c.fillRect(x,0,4,256);
     }
-    // Чёрный зубчатый зигзагообразный бордюр сверху (как в сериале)
-    c.fillStyle='#11191f';
-    c.fillRect(0,0,512,8);
-    let stepW=32;
-    for(let x=0;x<512;x+=stepW){
+    // Чёрный зубчатый зигзагообразный бордюр сверху (как на фото из сериала)
+    c.fillStyle='#0d1317';
+    c.fillRect(0,0,512,10);
+    let stepW=42.66;
+    for(let i=0;i<12;i++){
+      let x=i*stepW;
       c.beginPath();
-      c.moveTo(x,8);
-      c.lineTo(x+stepW,8);
-      c.lineTo(x+stepW,34);
+      c.moveTo(x,10);
+      c.lineTo(x+stepW,10);
+      c.lineTo(x+stepW,46);
       c.closePath();
       c.fill();
-      // Ступенчатая насечка на гипотенузе
       for(let s=0;s<4;s++){
-        c.fillRect(x+s*7,8+s*6,9,7);
+        c.fillRect(x+s*9,10+s*8,12,9);
       }
     }
     // Чёрные силуэты-пиктограммы игроков под зубьями на белой стене
-    c.strokeStyle='#151f26';c.fillStyle='#151f26';c.lineWidth=2.4;
-    for(let i=0;i<10;i++){
-      let px=24+i*50, py=48+(i%3)*4;
-      c.beginPath();c.arc(px,py,3.5,0,7);c.fill();
-      c.beginPath();c.moveTo(px,py+4);c.lineTo(px+(i%2?3:-3),py+14);c.stroke();
-      // Руки и ноги в движении
-      c.beginPath();c.moveTo(px-7,py+6);c.lineTo(px,py+7);c.lineTo(px+7,py+3);c.stroke();
-      c.beginPath();c.moveTo(px-5,py+23);c.lineTo(px+(i%2?3:-3),py+14);c.lineTo(px+6,py+22);c.stroke();
+    c.strokeStyle='#11181d';c.fillStyle='#11181d';c.lineWidth=3.2;
+    for(let i=0;i<11;i++){
+      let px=22+i*44, py=60+(i%3)*5;
+      c.beginPath();c.arc(px,py,4.5,0,7);c.fill();
+      c.beginPath();c.moveTo(px,py+5);c.lineTo(px+(i%2?4:-4),py+18);c.stroke();
+      c.beginPath();c.moveTo(px-9,py+8);c.lineTo(px,py+9);c.lineTo(px+9,py+4);c.stroke();
+      c.beginPath();c.moveTo(px-7,py+29);c.lineTo(px+(i%2?4:-4),py+18);c.lineTo(px+8,py+28);c.stroke();
     }
   }else if(kind==='dormWall'){
     c.fillStyle='#687e87';c.fillRect(0,0,256,256);
@@ -706,11 +705,13 @@ function buildDorm(){
   oRing.rotation.x=-Math.PI/2;oRing.position.set(2.05,.015,-6.8);world.add(oRing);
 
   // 2. СТЕНЫ ГЛАВНОГО ЗАЛА: нижний ярус — белые панели с чёрными зубьями и силуэтами игр; верхний ярус — ярко-бирюзовый
-  let lowerSideMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',7,1)});
-  let lowerFrontSideMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',2,1)});
-  let lowerBackMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',6,1)});
-  let upperSideMat=new THREE.MeshStandardMaterial({color:0x00b4d0,emissive:0x0088a3,emissiveIntensity:.55,roughness:.68,map:makeTex('dormUpperWall',8,2)});
-  let upperFrontMat=new THREE.MeshStandardMaterial({color:0x00b4d0,emissive:0x0088a3,emissiveIntensity:.55,roughness:.68,map:makeTex('dormUpperWall',6,2)});
+  let tLowSide=makeTex('dormLowerWall',7,1), tLowFront=makeTex('dormLowerWall',2,1), tLowBack=makeTex('dormLowerWall',6,1);
+  let tUpSide=makeTex('dormUpperWall',8,2), tUpFront=makeTex('dormUpperWall',6,2);
+  let lowerSideMat=new THREE.MeshStandardMaterial({color:0xeef3f5,emissive:0xffffff,emissiveMap:tLowSide,emissiveIntensity:.38,roughness:.75,map:tLowSide});
+  let lowerFrontSideMat=new THREE.MeshStandardMaterial({color:0xeef3f5,emissive:0xffffff,emissiveMap:tLowFront,emissiveIntensity:.38,roughness:.75,map:tLowFront});
+  let lowerBackMat=new THREE.MeshStandardMaterial({color:0xeef3f5,emissive:0xffffff,emissiveMap:tLowBack,emissiveIntensity:.38,roughness:.75,map:tLowBack});
+  let upperSideMat=new THREE.MeshStandardMaterial({color:0x00b8d4,emissive:0x00b8d4,emissiveMap:tUpSide,emissiveIntensity:.58,roughness:.68,map:tUpSide});
+  let upperFrontMat=new THREE.MeshStandardMaterial({color:0x00b8d4,emissive:0x00b8d4,emissiveMap:tUpFront,emissiveIntensity:.58,roughness:.68,map:tUpFront});
   let cyanTrimMat=new THREE.MeshStandardMaterial({color:0x009bb5,emissive:0x006d82,emissiveIntensity:.45,roughness:.65});
   let darkMetalMat=mat(0x161f24,.5,.35);
 
@@ -732,7 +733,8 @@ function buildDorm(){
   solid(-11.625,-20,8.75,1.0);
   solid(11.625,-20,8.75,1.0);
   // Перемычки над левым и правым входами в туалет (x = -6.0 и x = +6.0, высота проёма 3.25 м)
-  let lintelMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',1,1)});
+  let tLintel=makeTex('dormLowerWall',1,1);
+  let lintelMat=new THREE.MeshStandardMaterial({color:0xeef3f5,emissive:0xffffff,emissiveMap:tLintel,emissiveIntensity:.38,roughness:.75,map:tLintel});
   box(-6.0,3.82,-20,2.5,1.15,.4,lintelMat);
   box(6.0,3.82,-20,2.5,1.15,.4,lintelMat);
   // Обрамление двух дверных проёмов в туалет (x = -6.0 и x = +6.0, ширина прохода 2.2 м)
@@ -826,12 +828,12 @@ function buildDorm(){
   // 4. КРЫЛО ТУАЛЕТА ЗА ДВУМЯ ВХОДАМИ (входы x = -6.0 и x = +6.0 на z = -20 ведут в общий зал туалета z: -20..-33)
   let bathFloorMat=mat(0xdce5e4,.55,0,makeTex('bathTile',6,5));
   let bathWallMat=mat(0xdce7e5,.5,0,makeTex('bathWall',5,2));
-  box(0,-.12,-26.6,20.8,.25,13.6,bathFloorMat);
-  box(-10.2,3.4,-26.6,.4,6.8,13.6,bathWallMat);
-  box(10.2,3.4,-26.6,.4,6.8,13.6,bathWallMat);
+  box(0,-.12,-26.75,20.8,.25,13.1,bathFloorMat);
+  box(-10.2,3.4,-26.75,.4,6.8,13.1,bathWallMat);
+  box(10.2,3.4,-26.75,.4,6.8,13.1,bathWallMat);
   box(0,3.4,-33.2,20.8,6.8,.4,bathWallMat);
-  box(0,3.4,-23.25,8.8,6.8,.35,bathWallMat);
-  box(0,6.8,-26.6,20.8,.25,13.6,0x7d9296);
+  box(0,2.2,-23.25,8.8,4.4,.35,bathWallMat);
+  box(0,6.8,-26.75,20.8,.25,13.1,0x7d9296);
   solid(-10.2,-26.6,1.0,13.6);
   solid(10.2,-26.6,1.0,13.6);
   solid(0,-33.2,20.8,1.0);
@@ -1070,7 +1072,7 @@ function assignAllNpcActivities(snap=false){
   let pairSpots=[[-4.4,2.6],[4.4,2.8],[-4.6,-4.2],[4.6,-4.5]];
   let eatSpots=[[-11.2,-15.4],[-9.8,-15.2],[-8.5,-15.6],[-10.8,-14.2],[-9.2,-14.4],[-7.8,-15.2]];
   let toiletSpots=[[-5.2,-30.5],[-2.6,-30.5],[3.2,-30.4],[5.8,-26.5],[5.8,-29.5]];
-  let piggySpots=[[-3.4,-11.2],[3.4,-11.2],[-0.5,-1.5],[0.4,1.2]];
+  let piggySpots=[[-3.4,-11.2],[3.4,-11.2],[-3.8,-8.5],[3.8,-8.5]];
 
   let rotated=[...r.hubNpcs.slice(phaseOffset),...r.hubNpcs.slice(0,phaseOffset)];
   for(let p=0;p<3;p++){
