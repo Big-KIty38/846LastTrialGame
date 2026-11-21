@@ -15,8 +15,8 @@
       "test": "red-light fair crossing",
       "result": {
         "mode": "result",
-        "steps": 1445,
-        "z": -34.057131743361296,
+        "steps": 1155,
+        "z": -34.09559580131354,
         "round": 1
       }
     },

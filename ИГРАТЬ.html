@@ -1,3 +1,27 @@
+<!-- Third-party Three.js license:
+The MIT License
+
+Copyright © 2010-2023 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+-->
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>Последний раунд — 3D-игра</title><style>
 :root{--ink:#f2f1e8;--muted:#a6bbc2;--pink:#f2759a;--mint:#75e1ba;--panel:rgba(12,27,36,.88)}
@@ -440,6 +464,55 @@ function makeTex(kind,repeatX=1,repeatY=1){
       c.fillRect(x*64+2,y*64+2,60,60);
       c.strokeStyle='#8e9c9b';c.lineWidth=2;c.strokeRect(x*64+1,y*64+1,62,62);
     }
+  }else if(kind==='dormArenaFloor'){
+    c.fillStyle='#46646c';c.fillRect(0,0,256,256);
+    for(let y=0;y<4;y++)for(let x=0;x<4;x++){
+      c.fillStyle=(x+y)%2?'#496870':'#436068';
+      c.fillRect(x*64+1,y*64+1,62,62);
+      c.strokeStyle='rgba(32,50,56,.45)';c.lineWidth=1.5;c.strokeRect(x*64+.5,y*64+.5,63,63);
+    }
+  }else if(kind==='dormUpperWall'){
+    let g=c.createLinearGradient(0,0,0,256);
+    g.addColorStop(0,'#008fa8');g.addColorStop(.5,'#00a3bf');g.addColorStop(1,'#06afc9');
+    c.fillStyle=g;c.fillRect(0,0,256,256);
+    c.strokeStyle='rgba(0,62,78,.28)';c.lineWidth=2;
+    for(let x=32;x<256;x+=64){c.beginPath();c.moveTo(x,0);c.lineTo(x,256);c.stroke();}
+    for(let y=64;y<256;y+=64){c.beginPath();c.moveTo(0,y);c.lineTo(256,y);c.stroke();}
+  }else if(kind==='dormLowerWall'){
+    cv.width=512;cv.height=256;
+    c=cv.getContext('2d');
+    c.fillStyle='#e5ecee';c.fillRect(0,0,512,256);
+    // Вертикальные рельефные панели белой стены
+    for(let x=0;x<512;x+=16){
+      c.fillStyle=x%32===0?'#d6e0e3':'#eef3f5';
+      c.fillRect(x,0,4,256);
+    }
+    // Чёрный зубчатый зигзагообразный бордюр сверху (как в сериале)
+    c.fillStyle='#11191f';
+    c.fillRect(0,0,512,8);
+    let stepW=32;
+    for(let x=0;x<512;x+=stepW){
+      c.beginPath();
+      c.moveTo(x,8);
+      c.lineTo(x+stepW,8);
+      c.lineTo(x+stepW,34);
+      c.closePath();
+      c.fill();
+      // Ступенчатая насечка на гипотенузе
+      for(let s=0;s<4;s++){
+        c.fillRect(x+s*7,8+s*6,9,7);
+      }
+    }
+    // Чёрные силуэты-пиктограммы игроков под зубьями на белой стене
+    c.strokeStyle='#151f26';c.fillStyle='#151f26';c.lineWidth=2.4;
+    for(let i=0;i<10;i++){
+      let px=24+i*50, py=48+(i%3)*4;
+      c.beginPath();c.arc(px,py,3.5,0,7);c.fill();
+      c.beginPath();c.moveTo(px,py+4);c.lineTo(px+(i%2?3:-3),py+14);c.stroke();
+      // Руки и ноги в движении
+      c.beginPath();c.moveTo(px-7,py+6);c.lineTo(px,py+7);c.lineTo(px+7,py+3);c.stroke();
+      c.beginPath();c.moveTo(px-5,py+23);c.lineTo(px+(i%2?3:-3),py+14);c.lineTo(px+6,py+22);c.stroke();
+    }
   }else if(kind==='dormWall'){
     c.fillStyle='#687e87';c.fillRect(0,0,256,256);
     c.fillStyle='#506670';c.fillRect(0,185,256,71);
@@ -658,20 +731,29 @@ function makeMuralMat(){
   return new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(cv),roughness:.85});
 }
 
-/* Цифровое табло выживших и призового фонда над главным выходом */
+/* Цифровое табло выживших (456.) и призового фонда над белой аркой (как на фото) */
 function makeLedBoard(roundIdx){
-  let cv=document.createElement('canvas');cv.width=1024;cv.height=256;
+  let cv=document.createElement('canvas');cv.width=768;cv.height=340;
   let c=cv.getContext('2d');
-  c.fillStyle='#0b1318';c.fillRect(0,0,1024,256);
-  c.strokeStyle='#d4af37';c.lineWidth=8;c.strokeRect(8,8,1008,240);
-  c.fillStyle='#75e1ba';c.font='bold 30px monospace';
-  c.fillText('УЧАСТНИКОВ В ИГРЕ',70,65);
-  c.fillText('НАКОПЛЕННЫЙ ПРИЗ (ВОН)',520,65);
-  c.fillStyle='#ff5c8a';c.font='bold 96px monospace';
-  let surv=String(SURVIVOR_COUNTS[clamp(roundIdx,0,6)]).padStart(3,'0');
-  c.fillText(surv,95,185);
-  c.fillStyle='#ffd86b';c.font='bold 78px monospace';
-  c.fillText(`${PRIZE_BILLIONS[clamp(roundIdx,0,6)]} МЛРД ₩`,510,182);
+  c.fillStyle='#0b1013';c.fillRect(0,0,768,340);
+  c.strokeStyle='#263238';c.lineWidth=16;c.strokeRect(8,8,752,324);
+  c.strokeStyle='#435761';c.lineWidth=3;c.strokeRect(22,22,724,296);
+  c.textAlign='center';
+  // Верхняя плашка ★ 참가인원 · УЧАСТНИКОВ ★
+  c.fillStyle='#bfe8dc';c.font='bold 24px monospace';
+  c.fillText('★  참 가 인 원  ·  УЧАСТНИКОВ  ★',384,62);
+  c.strokeStyle='rgba(191,232,220,.35)';c.lineWidth=2;
+  c.beginPath();c.moveTo(175,78);c.lineTo(593,78);c.stroke();
+  // Крупные светящиеся цифры 456. по центру
+  let surv=String(SURVIVOR_COUNTS[clamp(roundIdx,0,6)]).padStart(3,'0')+'.';
+  c.save();
+  c.shadowColor='#d6fff0';c.shadowBlur=18;
+  c.fillStyle='#eefcf5';c.font='bold 152px monospace';
+  c.fillText(surv,402,218);
+  c.restore();
+  // Нижняя строка призового фонда
+  c.fillStyle='#ffd86b';c.font='bold 26px monospace';
+  c.fillText(`ПРИЗОВОЙ ФОНД: ${PRIZE_BILLIONS[clamp(roundIdx,0,6)]} МЛРД ₩`,384,292);
   return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)});
 }
 
@@ -759,151 +841,330 @@ const PIGGY_LINES=[
   'Считает пачки денег под потолком: «Каждый звук сирены добавляет сто миллионов».'
 ];
 
+// Кэш геометрий для быстрой отрисовки многоярусных коек без нагрузки на FPS
+const FAST_GEO_CACHE={};
+function fastBox(x,y,z,w,h,d,m,parent=world,shadow=false){
+  let k=`${w}_${h}_${d}`;
+  if(!FAST_GEO_CACHE[k])FAST_GEO_CACHE[k]=new THREE.BoxGeometry(w,h,d);
+  let mesh=new THREE.Mesh(FAST_GEO_CACHE[k],m);
+  mesh.position.set(x,y,z);
+  mesh.castShadow=shadow;
+  mesh.receiveShadow=shadow;
+  parent.add(mesh);
+  return mesh;
+}
+
 function buildDorm(){
   state=ensureState(state);
   state.day=state.round===0?1:Math.min(6,state.round);
   mode='hub';
-  resetWorld(0x13242f);
-  // Главный зал общежития (30x40) + проход в крыло туалета справа (x: 15..27, z: -8..8)
-  ground(30,40,0xcfd7d6,makeTex('dormFloor',8,11));
-  let wallMat=mat(0x647b84,.82,0,makeTex('dormWall',6,2));
-  // Западная, Северная, Южная стены
-  box(-15,3.8,0,.4,7.6,40,wallMat);
-  box(0,3.8,-20,30,7.6,.4,wallMat);
-  box(0,3.8,20,30,7.6,.4,wallMat);
-  // Восточная стена с открытым проёмом в ТУАЛЕТ (z от -2.6 до 2.6 свободно!)
-  box(15,3.8,-11.3,.4,7.6,17.4,wallMat);
-  box(15,3.8,11.3,.4,7.6,17.4,wallMat);
-  box(15,6.1,0,.4,3.0,5.2,wallMat);
-  solid(15,-11.3,.9,17.4);
-  solid(15,11.3,.9,17.4);
-  // Потолок главного зала и светильники
-  box(0,7.6,0,30,.25,40,0x4c6069);
-  for(let z of [-13,0,13]){
-    box(0,7.38,z,6,.08,1.1,new THREE.MeshStandardMaterial({color:0xd8f1e1,emissive:0xd0ffe7,emissiveIntensity:1.5}));
-    let l=new THREE.PointLight(0xd8ffee,38,24,2);l.position.set(0,6.6,z);world.add(l);
+  resetWorld(0x064f60);
+
+  // 1. ПОЛ ОСНОВНОГО ЗАЛА (гладкий тёмно-бирюзовый пол с красной и синей линией, крестом X и кругом O как на картинке)
+  let floorMat=mat(0x4a6972,.36,.12,makeTex('dormArenaFloor',10,12));
+  box(0,-.13,0,32,.25,40,floorMat);
+  // Центральные разделительные линии (красная слева, синяя справа)
+  let redLineMat=new THREE.MeshStandardMaterial({color:0xe63646,emissive:0x9e1926,emissiveIntensity:.45,roughness:.35});
+  let blueLineMat=new THREE.MeshStandardMaterial({color:0x2389e6,emissive:0x104c8a,emissiveIntensity:.45,roughness:.35});
+  fastBox(-.22,.008,-1.8,.11,.015,28.5,redLineMat);
+  fastBox(.22,.008,-1.8,.11,.015,28.5,blueLineMat);
+  // Большой красный крест X слева от линии (z = -6.8, x = -2.05)
+  for(let ang of [.68,-.68]){
+    let xb=fastBox(-2.05,.012,-6.8,.34,.016,3.15,redLineMat);
+    xb.rotation.y=ang;
+  }
+  // Большой синий круг O справа от линии (z = -6.8, x = 2.05)
+  let oRing=new THREE.Mesh(new THREE.RingGeometry(1.02,1.34,32),new THREE.MeshStandardMaterial({color:0x2389e6,emissive:0x104c8a,emissiveIntensity:.45,roughness:.35,side:THREE.DoubleSide}));
+  oRing.rotation.x=-Math.PI/2;oRing.position.set(2.05,.015,-6.8);world.add(oRing);
+
+  // 2. СТЕНЫ ГЛАВНОГО ЗАЛА: нижний ярус — белые панели с чёрными зубьями и силуэтами игр; верхний ярус — ярко-бирюзовый
+  let lowerSideMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',7,1)});
+  let lowerFrontSideMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',2,1)});
+  let lowerBackMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',6,1)});
+  let upperSideMat=new THREE.MeshStandardMaterial({color:0x00b4d0,emissive:0x0088a3,emissiveIntensity:.55,roughness:.68,map:makeTex('dormUpperWall',8,2)});
+  let upperFrontMat=new THREE.MeshStandardMaterial({color:0x00b4d0,emissive:0x0088a3,emissiveIntensity:.55,roughness:.68,map:makeTex('dormUpperWall',6,2)});
+  let cyanTrimMat=new THREE.MeshStandardMaterial({color:0x009bb5,emissive:0x006d82,emissiveIntensity:.45,roughness:.65});
+  let darkMetalMat=mat(0x161f24,.5,.35);
+
+  // Боковые и задняя стены (x = -16, x = 16, z = 20)
+  box(-16,2.2,0,.4,4.4,40,lowerSideMat);
+  box(-16,7.1,0,.4,5.4,40,upperSideMat);
+  box(16,2.2,0,.4,4.4,40,lowerSideMat);
+  box(16,7.1,0,.4,5.4,40,upperSideMat);
+  box(0,2.2,20,32,4.4,.4,lowerBackMat);
+  box(0,7.1,20,32,5.4,.4,upperFrontMat);
+
+  // ПЕРЕДНЯЯ СТЕНА (z = -20):
+  // В центре — большая белая полукруглая арка (x: -4.4..4.4).
+  // СЛЕВА И СПРАВА ОТ АРКИ (там где стрелочки на картинке: x = -6.0 и x = +6.0) — ДВА ВХОДА В ТУАЛЕТ!
+  box(0,7.1,-20,32,5.4,.4,upperFrontMat);
+  // Левая и правая внешние части нижней белой передней стены (x: -16..-7.25 и 7.25..16)
+  box(-11.625,2.2,-20,8.75,4.4,.4,lowerFrontSideMat);
+  box(11.625,2.2,-20,8.75,4.4,.4,lowerFrontSideMat);
+  solid(-11.625,-20,8.75,1.0);
+  solid(11.625,-20,8.75,1.0);
+  // Перемычки над левым и правым входами в туалет (x = -6.0 и x = +6.0, высота проёма 3.25 м)
+  let lintelMat=new THREE.MeshStandardMaterial({color:0xe8eff1,emissive:0xd5e0e3,emissiveIntensity:.32,roughness:.75,map:makeTex('dormLowerWall',1,1)});
+  box(-6.0,3.82,-20,2.5,1.15,.4,lintelMat);
+  box(6.0,3.82,-20,2.5,1.15,.4,lintelMat);
+  // Обрамление двух дверных проёмов в туалет (x = -6.0 и x = +6.0, ширина прохода 2.2 м)
+  for(let sx of [-1,1]){
+    let dx=sx*6.0;
+    fastBox(dx-1.15,1.62,-19.88,.16,3.25,.48,darkMetalMat);
+    fastBox(dx+1.15,1.62,-19.88,.16,3.25,.48,darkMetalMat);
+    fastBox(dx,3.25,-19.88,2.46,.16,.48,darkMetalMat);
+    // Тёплая подсветка самого входа в туалет и табличка «🚻 ВХОД В ТУАЛЕТ» там, где стрелочки
+    let dl=new THREE.PointLight(0xdffcf4,16,8,2);dl.position.set(dx,3.0,-19.2);world.add(dl);
+    label('🚻 ВХОД В ТУАЛЕТ',dx,3.68,-19.4,.46,'#8ef0cb');
+  }
+  // Узкие белые пилоны между входами в туалет и центральной аркой (x = ±4.65)
+  box(-4.65,2.2,-20,.5,4.4,.5,lowerFrontSideMat);
+  box(4.65,2.2,-20,.5,4.4,.5,lowerFrontSideMat);
+  solid(-4.65,-20,.65,1.0);
+  solid(4.65,-20,.65,1.0);
+
+  // Бирюзовые вертикальные колонны-пилястры и чёрные камеры/динамики на стенах (как на референсе)
+  for(let px of [-10.5,-4.65,4.65,10.5]){
+    fastBox(px,7.1,-19.78,.35,5.4,.22,cyanTrimMat);
+    fastBox(px+(px<0?.55:-.55),4.82,-19.72,.34,.26,.3,darkMetalMat);
+  }
+  for(let pz of [-12,-4,4,12])for(let side of [-1,1]){
+    fastBox(side*15.78,7.1,pz,.22,5.4,.35,cyanTrimMat);
+    fastBox(side*15.72,4.85,pz+1.5,.28,.26,.32,darkMetalMat);
   }
 
-  // КРЫЛО ТУАЛЕТА (справа от зала: x 15..27, z -8..8)
-  let bathFloor=box(21,-.12,0,12,.25,16,mat(0xdce5e4,.6,0,makeTex('bathTile',4,5)));
-  let bathWallMat=mat(0xdce7e5,.55,0,makeTex('bathWall',4,2));
-  box(21,3.4,-8,12,6.8,.4,bathWallMat);
-  box(21,3.4,8,12,6.8,.4,bathWallMat);
-  box(27,3.4,0,.4,6.8,16,bathWallMat);
-  box(21,6.8,0,12,.25,16,0x7d9296);
-  solid(21,-8,12,1);solid(21,8,12,1);solid(27,0,1,16);
-  // Ограничители чтобы не выйти за пределы коридора туалета по Z при X>14.6
-  solid(18,-14,6,11);solid(18,14,6,11);
-  let bathLight=new THREE.PointLight(0xc8f6ff,26,16,2);bathLight.position.set(21,5.6,0);world.add(bathLight);
-  label('ТУАЛЕТ / УМЫВАЛЬНИК',14.7,3.9,0,.62,'#8ef0cb');
+  // Высокий бирюзовый потолок главного зала и равномерное освещение
+  let ceil=fastBox(0,9.8,0,32,.25,40,new THREE.MeshStandardMaterial({color:0x007b92,emissive:0x004a59,emissiveIntensity:.5,roughness:.8}));
+  for(let z of [-13,-1,11]){
+    let l=new THREE.PointLight(0xdff8ff,36,32,1.6);l.position.set(0,9.0,z);world.add(l);
+  }
 
-  // Раковины и большое зеркало в туалете (северная стена туалета z = -7.3)
-  box(20.5,2.3,-7.72,7.2,1.6,.08,new THREE.MeshStandardMaterial({color:0xaad7e6,metalness:.85,roughness:.12})); // зеркало
+  // 3. ЦЕНТРАЛЬНАЯ БЕЛАЯ ПОЛУКРУГЛАЯ АРКА, ЧЁРНЫЕ СТУПЕНИ, ДВОЙНЫЕ БЕЛЫЕ ДВЕРИ И ТАБЛО «456.»
+  let archShape=new THREE.Shape();
+  archShape.moveTo(-4.4,0);
+  archShape.lineTo(-4.4,3.15);
+  archShape.absarc(0,.45,5.16,Math.PI-.55,.55,true);
+  archShape.lineTo(4.4,0);
+  archShape.closePath();
+  let archHole=new THREE.Path();
+  archHole.moveTo(-3.35,0);
+  archHole.lineTo(-3.35,.55);
+  archHole.absarc(0,.55,3.35,Math.PI,0,true);
+  archHole.lineTo(3.35,0);
+  archHole.closePath();
+  archShape.holes.push(archHole);
+  let archGeo=new THREE.ExtrudeGeometry(archShape,{depth:.36,bevelEnabled:false,curveSegments:28});
+  let archMesh=new THREE.Mesh(archGeo,new THREE.MeshStandardMaterial({color:0xf0f5f7,emissive:0xd9e3e6,emissiveIntensity:.35,roughness:.6}));
+  archMesh.position.set(0,0,-20.02);
+  world.add(archMesh);
+  // Тёмная дуга-окантовка поверх белой арки и прямоугольное чёрное окошко под сводом арки (как на фото)
+  let trimShape=new THREE.Shape();
+  trimShape.absarc(0,.45,5.24,Math.PI-.54,.54,true);
+  trimShape.absarc(0,.45,5.08,.54,Math.PI-.54,false);
+  let trimMesh=new THREE.Mesh(new THREE.ExtrudeGeometry(trimShape,{depth:.4,bevelEnabled:false,curveSegments:28}),darkMetalMat);
+  trimMesh.position.set(0,0,-20.04);world.add(trimMesh);
+  fastBox(0,4.28,-19.62,1.38,.45,.12,darkMetalMat);
+
+  // Тёмная ниша за аркой, чёрный ступенчатый подиум и белые двойные двери
+  let alcoveMat=mat(0x182128,.75,.15);
+  box(0,2.3,-23.1,8.6,4.6,.35,alcoveMat);
+  box(-4.2,2.3,-21.55,.35,4.6,3.1,alcoveMat);
+  box(4.2,2.3,-21.55,.35,4.6,3.1,alcoveMat);
+  box(0,4.55,-21.55,8.6,.3,3.1,alcoveMat);
+  // 4 широкие чёрные ступени перед дверями
+  for(let s=0;s<4;s++){
+    let sd=2.6-s*.36, sh=(s+1)*.13;
+    fastBox(0,sh/2,-21.65-s*.18,7.8,sh,sd,mat(0x12191f,.45,.25));
+  }
+  // Белые двустворчатые двери в глубине арки (с горизонтальными ручками-поручнями)
+  let doorWhite=new THREE.MeshStandardMaterial({color:0xf5fafa,emissive:0xe2eff2,emissiveIntensity:.48,roughness:.25});
+  let doorGlass=mat(0x23313a,.25,.55);
+  fastBox(0,1.82,-22.82,2.72,2.52,.12,doorWhite); // белая рама
+  fastBox(-.65,1.82,-22.78,1.18,2.28,.1,doorGlass); // левая створка
+  fastBox(.65,1.82,-22.78,1.18,2.28,.1,doorGlass);  // правая створка
+  fastBox(0,1.82,-22.75,.10,2.48,.12,doorWhite);    // центральный импост
+  fastBox(-.65,1.76,-22.72,1.14,.07,.12,doorWhite); // горизонтальная перекладина слева
+  fastBox(.65,1.76,-22.72,1.14,.07,.12,doorWhite);  // горизонтальная перекладина справа
+  fastBox(-.16,1.76,-22.68,.07,.32,.14,doorWhite);  // ручка слева
+  fastBox(.16,1.76,-22.68,.07,.32,.14,doorWhite);   // ручка справа
+  let doorLight=new THREE.PointLight(0xe6f9ff,24,9,2);doorLight.position.set(0,3.6,-21.4);world.add(doorLight);
+  solid(0,-21.6,8.7,3.1);
+
+  // Чёрное цифровое LED-табло «456.» на бирюзовой стене строго над белой аркой
+  fastBox(0,6.38,-19.72,5.35,2.35,.28,darkMetalMat);
+  let led=new THREE.Mesh(new THREE.BoxGeometry(4.95,2.05,.16),makeLedBoard(state.round));
+  led.position.set(0,6.38,-19.58);world.add(led);
+
+  // 4. КРЫЛО ТУАЛЕТА ЗА ДВУМЯ ВХОДАМИ (входы x = -6.0 и x = +6.0 на z = -20 ведут в общий зал туалета z: -20..-33)
+  let bathFloorMat=mat(0xdce5e4,.55,0,makeTex('bathTile',6,5));
+  let bathWallMat=mat(0xdce7e5,.5,0,makeTex('bathWall',5,2));
+  box(0,-.12,-26.6,20.8,.25,13.6,bathFloorMat);
+  box(-10.2,3.4,-26.6,.4,6.8,13.6,bathWallMat);
+  box(10.2,3.4,-26.6,.4,6.8,13.6,bathWallMat);
+  box(0,3.4,-33.2,20.8,6.8,.4,bathWallMat);
+  box(0,3.4,-23.25,8.8,6.8,.35,bathWallMat);
+  box(0,6.8,-26.6,20.8,.25,13.6,0x7d9296);
+  solid(-10.2,-26.6,1.0,13.6);
+  solid(10.2,-26.6,1.0,13.6);
+  solid(0,-33.2,20.8,1.0);
+  solid(-8.8,-20.2,3.1,1.2);
+  solid(8.8,-20.2,3.1,1.2);
+  for(let bx of [-6.0,0,6.0]){
+    let bl=new THREE.PointLight(0xc8f6ff,22,15,2);bl.position.set(bx,5.6,-27.5);world.add(bl);
+  }
+
+  // Раковины и большое зеркало в туалете (у дальней стены слева: x = -6.8..-1.2, z = -32.4)
+  box(-4.0,2.3,-32.92,6.8,1.6,.08,new THREE.MeshStandardMaterial({color:0xaad7e6,metalness:.85,roughness:.12}));
   for(let i=0;i<4;i++){
-    let sx=17.8+i*1.8;
-    box(sx,.95,-7.25,1.1,.18,.85,0xf2f6f5);
-    cylinder(sx,.48,-7.25,.12,.9,0x8ea2a6);
-    box(sx,1.18,-7.58,.08,.22,.18,0xc0d2d6);
+    let sx=-6.4+i*1.6;
+    fastBox(sx,.95,-32.45,1.05,.18,.82,mat(0xf2f6f5,.4,.1));
+    cylinder(sx,.48,-32.45,.12,.9,0x8ea2a6);
+    fastBox(sx,1.18,-32.78,.08,.22,.18,mat(0xc0d2d6,.3,.6));
   }
-  solid(20.5,-7.3,7.6,1.2);
-  addInteract(20.5,-5.8,'E · умыться у раковины (+бодрость и фокус)',useRestroomSink);
+  solid(-4.0,-32.5,7.2,1.2);
+  label('УМЫВАЛЬНИК И ЗЕРКАЛО',-4.0,3.45,-32.3,.52,'#8ef0cb');
+  addInteract(-4.0,-30.8,'E · умыться у раковины (+бодрость и фокус)',useRestroomSink);
 
-  // Кабинки туалета (восточная стена туалета x = 25.4, z = -4.5..4.5)
+  // Кабинки туалета (у правой стены крыла туалета: x = 8.6, z = -25.2..-31.2)
   for(let i=0;i<3;i++){
-    let cz=-3.6+i*3.6;
-    box(25.3,1.4,cz-1.6,2.6,2.8,.12,0x5f7b82);
-    box(25.3,1.4,cz+1.6,2.6,2.8,.12,0x5f7b82);
-    box(24.0,1.35,cz,.12,2.5,1.35,i===1?0x7b9ca3:0x4b6870); // двери кабинок
-    box(26.1,.55,cz,.65,.55,.55,0xf2f6f5); // унитаз
+    let cz=-25.4-i*2.8;
+    fastBox(8.6,1.4,cz-1.35,2.4,2.8,.12,mat(0x5f7b82,.6,.1));
+    fastBox(8.6,1.4,cz+1.35,2.4,2.8,.12,mat(0x5f7b82,.6,.1));
+    fastBox(7.4,1.35,cz,.12,2.5,1.25,mat(i===1?0x7b9ca3:0x4b6870,.6,.1));
+    fastBox(9.3,.55,cz,.62,.55,.55,mat(0xf2f6f5,.4,.1));
   }
-  solid(25.6,0,2.4,10.5);
-  addInteract(23.5,0,'E · осмотреть кабинки туалета',useRestroomStall);
+  solid(8.8,-28.2,2.4,9.2);
+  label('КАБИНКИ ТУАЛЕТА',7.1,3.2,-28.2,.48,'#8ef0cb');
+  addInteract(6.4,-28.2,'E · осмотреть кабинки туалета',useRestroomStall);
 
-  // Вентиляционная шахта в туалете (как в сериале, где 067 разведывала следующую игру!)
-  box(23.8,3.6,7.68,1.8,1.1,.15,0x374950);
-  for(let i=0;i<4;i++)box(23.8,3.25+i*.22,7.60,1.6,.05,.18,0x8ca0a6);
-  box(23.8,.75,7.2,1.3,1.5,.8,0x687d84); // ступенька/короб под шахтой
-  label('ВЕНТИЛЯЦИЯ',23.8,2.6,7.1,.45,'#f6daa3');
-  addInteract(23.8,5.8,'E · вентиляционная шахта (разведка следующей игры)',useRestroomVent);
+  // Вентиляционная шахта в туалете (у дальней стены справа: x = 3.2, z = -32.8)
+  fastBox(3.2,3.6,-32.92,1.8,1.1,.15,mat(0x374950,.6,.3));
+  for(let i=0;i<4;i++)fastBox(3.2,3.25+i*.22,-32.82,1.6,.05,.18,mat(0x8ca0a6,.4,.5));
+  fastBox(3.2,.75,-32.35,1.3,1.5,.8,mat(0x687d84,.7,.2));
+  label('ВЕНТИЛЯЦИЯ',3.2,2.6,-32.2,.48,'#f6daa3');
+  addInteract(3.2,-30.8,'E · вентиляционная шахта (разведка следующей игры)',useRestroomVent);
 
-  // Настенные рисунки 6 испытаний за койками (пасхалка из сериала!)
+  // 5. НАСТЕННЫЕ РИСУНКИ 6 ИСПЫТАНИЙ (и на боковой стене за койками, и у передней стены слева)
   let muralMat=makeMuralMat();
-  let m1=new THREE.Mesh(new THREE.BoxGeometry(.12,2.5,13),muralMat);
-  m1.position.set(-14.72,2.35,0);world.add(m1);
+  let m1=new THREE.Mesh(new THREE.BoxGeometry(.12,2.3,12),muralMat);
+  m1.position.set(-15.72,2.25,0);world.add(m1);
   addInteract(-13.4,0,'E · изучить рисунки 6 испытаний на стене',inspectMural);
+  addInteract(-9.5,-18.2,'E · изучить рисунки 6 испытаний на стене',inspectMural);
 
-  // Многоярусные пирамиды коек (с каждым раундом часть коек убирают, открывая стены!)
-  let bunkCols=state.round>=3?3:5;
-  let bunkSpots=[];
-  for(let side of [-1,1])for(let i=0;i<5;i++){
-    if(side===1&&i===2)continue; // оставляем проход в туалет свободным!
-    if(i>=bunkCols&&i!==4)continue;
-    let x=side*11.3,z=-13+i*6.2;
-    let tiers=i%2===0?3:2;
+  // 6. МНОГОЯРУСНЫЕ СТУПЕНЧАТЫЕ КАРКАСЫ КОЕК СЛЕВА И СПРАВА (как на референсе: чёрный металл, белые матрасы, бежевые одеяла)
+  let bunkFrameMat=mat(0x161e24,.5,.35);
+  let mattressMat=mat(0xe0e6e4,.82,0);
+  let pillowMat=mat(0xeeeadd,.85,0);
+  let blanketMatA=mat(0xc8cbb9,.88,0);
+  let blanketMatB=mat(0xb6baa7,.88,0);
+  let sleeperSuitMat=mat(0x177c6d,.75,.05);
+  let sleeperSkinMat=mat(0xd8b499,.7,0);
+
+  function buildBunkStack(x,z,tiers,side,populate=false,seed=0){
     for(let t=0;t<tiers;t++){
-      let h=t*1.65;
-      box(x,h+.48,z,3.1,.22,4.1,0x203f4b);
-      box(x,h+.68,z,2.8,.16,3.7,0xb7ccc4);
-      box(x,h+.82,z-1.25,2.3,.14,.75,0xf1e8c5);
-      box(x,h+.78,z+.5,2.6,.08,2.1,0x2b7a6e); // одеяло
+      let h=t*1.28+.48;
+      fastBox(x,h,z,2.35,.12,3.45,bunkFrameMat,world,t===0);
+      fastBox(x,h+.13,z,2.16,.14,3.26,mattressMat);
+      let pz=z+(seed%2===0?-1.18:1.18), bz=z+(seed%2===0?.35:-.35);
+      fastBox(x,h+.24,pz,1.42,.10,.52,pillowMat);
+      fastBox(x+(t%2?.08:-.08),h+.22,bz,1.88,.08,1.85,t%2?blanketMatA:blanketMatB);
+      fastBox(x-1.12,h+.38,z,.05,.45,2.4,bunkFrameMat);
+      fastBox(x+1.12,h+.38,z,.05,.45,2.4,bunkFrameMat);
+      if(populate&&((t+seed)%2===0)){
+        fastBox(x,h+.28,bz,0.56,.22,1.35,sleeperSuitMat);
+        fastBox(x,h+.31,pz*.65+z*.35,.28,.24,.28,sleeperSkinMat);
+      }
     }
-    for(let dx of [-1.45,1.45])for(let dz of [-1.95,1.95])box(x+dx,tiers*.85+.4,z+dz,.11,tiers*1.7,.11,0x273d49);
-    // Лесенка на ярусы
-    for(let s=0;s<tiers*3;s++)box(x-side*1.55,.35+s*.52,z-1.2,.08,.06,.75,0xc8b568);
-    solid(x,z,3.4,4.4);
-    bunkSpots.push({x:x-side*2.1,z,bedX:x,bedZ:z,side});
+    let totalH=tiers*1.28+.55;
+    for(let dx of [-1.14,1.14])for(let dz of [-1.68,1.68]){
+      fastBox(x+dx,totalH/2,z+dz,.09,totalH,.09,bunkFrameMat);
+    }
+    for(let r=0;r<tiers*3;r++){
+      let ry=.32+r*.42;
+      if(ry<totalH-.1){
+        fastBox(x,ry,z-1.68,.95,.045,.05,bunkFrameMat);
+        fastBox(x,ry,z+1.68,.95,.045,.05,bunkFrameMat);
+      }
+    }
   }
 
-  // Гигантская золотая копилка под потолком и подиум голосования О / Х под ней
+  let bunkSpots=[];
+  let showFullBunks=state.round<3;
+  // Ступенчатые ряды коек вдоль левой (side = -1) и правой (side = 1) стены:
+  // Внутренний ряд (|x| = 8.4, 2 яруса), средний ряд (|x| = 11.2, 3 яруса), внешний ряд у стены (|x| = 14.1, 4 яруса)
+  // Проходы к обоим входам в туалет (x = ±6.0, z = -20) полностью открыты и просматриваются из любой точки зала!
+  let rowZs=[-13.0,-8.6,-4.2,.2,4.6,9.0,13.4];
+  for(let side of [-1,1]){
+    rowZs.forEach((z,ri)=>{
+      if(!showFullBunks&&ri%2===1)return;
+      let x1=side*8.4;
+      buildBunkStack(x1,z,2,side,state.round<=1,ri+1);
+      solid(x1,z,2.5,3.6);
+      bunkSpots.push({x:x1-side*1.8,z,bedX:x1,bedZ:z,side});
+      let x2=side*11.2;
+      buildBunkStack(x2,z,3,side,state.round<=2,ri+3);
+      solid(x2,z,2.5,3.6);
+      if(side===-1&&ri===3)return; // проход к пасхалке с рисунками 6 игр на левой стене (z = 0)
+      let x3=side*14.1;
+      buildBunkStack(x3,z,4,side,state.round<=1,ri+5);
+      solid(x3,z,2.5,3.6);
+    });
+    for(let cx of [8.4,11.2,14.1]){
+      let tiers=cx<9?2:cx<12?3:4;
+      buildBunkStack(side*cx,17.5,tiers,side,true,7);
+      solid(side*cx,17.5,2.5,3.6);
+    }
+  }
+
+  // 7. ЗОЛОТАЯ КОПИЛКА ВЫСОКО ПОД ПОТОЛКОМ И ПОДИУМ ГОЛОСОВАНИЯ (О / Х) НА ЦЕНТРАЛЬНОЙ ЛИНИИ
   let piggy=buildPiggyBank(state.round);
-  cylinder(0,.45,-1.5,.95,.9,0x233842);
-  box(-.35,.96,-1.5,.38,.12,.38,new THREE.MeshStandardMaterial({color:0x2b9dff,emissive:0x1b66c9,emissiveIntensity:.9})); // кнопка O
-  box(.35,.96,-1.5,.38,.12,.38,new THREE.MeshStandardMaterial({color:0xff4365,emissive:0xb81d3d,emissiveIntensity:.9}));  // кнопка X
-  solid(0,-1.5,1.8,1.8);
-  label(`КОПИЛКА · ${PRIZE_BILLIONS[state.round]} МЛРД ₩`,0,2.5,-1.5,.68,'#ffd86b');
-  addInteract(0,.2,'E · копилка, статистика выживших и голосование (О / Х)',inspectPiggyVote);
+  piggy.position.set(0,7.75,-4.2);
+  cylinder(0,.42,-11.8,.68,.84,0x1d2b33);
+  fastBox(-.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0x2b9dff,emissive:0x1b66c9,emissiveIntensity:.9}));
+  fastBox(.25,.9,-11.8,.28,.1,.28,new THREE.MeshStandardMaterial({color:0xff4365,emissive:0xb81d3d,emissiveIntensity:.9}));
+  solid(0,-11.8,1.4,1.4);
+  label(`КОПИЛКА · ${PRIZE_BILLIONS[state.round]} МЛРД ₩`,0,1.95,-11.8,.5,'#ffd86b');
+  addInteract(0,-10.0,'E · копилка, статистика выживших и голосование (О / Х)',inspectPiggyVote);
 
-  // Цифровое табло и розовые ворота с видом на пастельную лестницу Эшера
-  let led=new THREE.Mesh(new THREE.BoxGeometry(8.5,2.1,.18),makeLedBoard(state.round));
-  led.position.set(0,5.3,-19.65);world.add(led);
-  box(0,2.4,-19.7,5.4,4.8,.28,0xe55b84);
-  // Пастельные балки лестницы над выходом
-  box(-5.5,4.6,-19.4,3.2,.45,.6,0x75e1ba);
-  box(5.5,5.2,-19.4,3.2,.45,.6,0xf7d969);
-  label('ВОРОТА НА ИСПЫТАНИЯ',0,3.8,-19.2,.68);
-
-  // Стойка выдачи пайка в глубине зала
-  box(0,1,-12,7.4,2,3,0x284c57);box(0,2.1,-12,7.7,.2,3.2,0xe8cf8f);solid(0,-12,7.8,3.5);
-  for(let i=0;i<7;i++){
-    box(-2.4+i*.8,2.28,-12,.45,.16,.32,0xc9a85c); // жестяные ланчбоксы
-    cylinder(-2.2+i*.8,2.32,-11.35,.10,.34,0x7fc8e8); // бутылки воды
+  // 8. СТОЙКА ВЫДАЧИ ПАЙКА, ОБМЕН ПРИПАСОВ И ТВОЯ КОЙКА (№456)
+  // Стойка выдачи пайка стоит слева от левого входа в туалет (x = -10.2, z = -17.6), чтобы оба входа в туалет (x = ±6.0) были полностью открыты!
+  box(-10.2,.85,-17.6,3.6,1.7,1.5,0x243f49);
+  box(-10.2,1.76,-17.6,3.8,.14,1.7,0xe8cf8f);
+  solid(-10.2,-17.6,4.0,1.9);
+  for(let i=0;i<5;i++){
+    fastBox(-11.4+i*.6,1.9,-17.6,.38,.14,.28,mat(0xc9a85c,.4,.4));
+    cylinder(-11.25+i*.6,1.94,-17.15,.08,.28,0x7fc8e8);
   }
-  label('ВЫДАЧА ПАЙКА И ВОДЫ',0,3.5,-12,.92);
-  addInteract(0,-9.2,'E · получить паёк и воду на перерыв',getRation);
+  label('ВЫДАЧА ПАЙКА И ВОДЫ',-10.2,2.85,-17.6,.56);
+  addInteract(-10.2,-15.8,'E · получить паёк и воду на перерыв',getRation);
 
-  // Стойка обмена и твоя койка
-  box(-5,1,15,3.2,2,1.6,0x9ba69c);label('ОБМЕН ПРИПАСОВ',-5,2.8,15,.6);solid(-5,15,3.4,1.8);
-  addInteract(-5,12.6,'E · обмен припасами',shop);
-  box(7,.5,14,3.1,1,4.1,0x296b69);box(7,1.12,14,2.8,.2,3.8,0xe1dbbf);solid(7,14,3.4,4.4);
-  label('ТВОЯ КОЙКА (№456)',7,2.4,14,.62);
-  addInteract(7,11.4,'E · сон и переход к следующему утру',bedMenu);
+  // Стойка обмена припасов (в задней левой части зала)
+  box(-4.8,.9,15.2,3.0,1.8,1.5,0x7d8d86);
+  label('ОБМЕН ПРИПАСОВ',-4.8,2.55,15.2,.54);
+  solid(-4.8,15.2,3.3,1.8);
+  addInteract(-4.8,13.0,'E · обмен припасами',shop);
 
-  // Охрана в общежитии (4 солдата в масках ○, △, □)
-  person(-3.2,-18,0xe33c70,'○',true);
-  person(3.2,-18,0xe33c70,'△',true);
-  person(0,-13.9,0xe33c70,'○',true);
-  person(-8.5,-18,0xe33c70,'□',true);
+  // Твоя койка №456 (в задней правой части зала, как на переднем плане референса)
+  buildBunkStack(4.8,15.2,2,1,false,0);
+  solid(4.8,15.2,2.6,3.6);
+  label('ТВОЯ КОЙКА (№456)',4.8,3.45,15.2,.58);
+  addInteract(4.8,12.6,'E · сон и переход к следующему утру',bedMenu);
 
-  // Размещаем 12 ключевых интерактивных NPC + массовку выживших участников!
+  // Охрана в общежитии (по бокам от белой арки, не загораживая белые двери и входы в туалет)
+  person(-3.5,-18.8,0xe33c70,'○',true);
+  person(3.5,-18.8,0xe33c70,'△',true);
+  person(-8.2,-18.8,0xe33c70,'□',true);
+  person(8.2,-18.8,0xe33c70,'○',true);
+
   player.z=14;player.x=0;
-  bounds={minX:-14.1,maxX:26.1,minZ:-19.1,maxZ:19.1};
+  bounds={minX:-15.1,maxX:15.1,minZ:-32.3,maxZ:19.1};
   roundData={dayClock:160,night:false,stealth:false,piggy,bunkSpots,hubNpcs:[],chatFeed:[]};
   initHubLife();
 
   setObjective(
     state.round===0?'ДЕНЬ 1 · ПЕРЕД ПЕРВОЙ ИГРОЙ':`ДЕНЬ ${state.day} · ВЕЧЕР ПОСЛЕ ИГРЫ`,
     state.round===0
-      ?`В зале 456 игроков. Получи еду, осмотри туалет и копилку, пообщайся с NPC (G — сводка зала). Койка запускает «${TITLES[0]}».`
+      ?`В зале 456 игроков. Получи еду, осмотри туалет (два входа слева и справа от белой арки) и копилку, пообщайся с NPC (G — сводка зала).`
       :`«${TITLES[state.round-1]}» позади. NPC едят, спорят, спят и ходят в туалет. Поужинай и поговори с ними: утром дня ${state.round+1} — «${TITLES[state.round]}».`
   );
 
@@ -933,10 +1194,11 @@ const ACT_LABELS={
 
 function initHubLife(){
   let r=roundData;
+  // Размещаем NPC вдоль многоярусных коек, у входов в туалет и у линии X/O (как на кадре из сериала), оставляя центральный обзор открытым
   let baseSpots=[
-    [-4.5,-3.2],[4.5,-3.5],[-4.2,4.2],[4.2,3.8],[-6.2,-10.2],[6.2,-9.8],
-    [1.8,6.5],[19.2,-3.8],[-2.5,9.5],[-7.0,1.0],[2.8,1.2],[-1.8,-6.2],
-    [-5.5,7.2],[5.5,7.0],[21.5,2.2],[0,-7.5]
+    [-4.8,3.2],[4.8,3.0],[-5.2,-2.5],[5.2,-2.8],[-9.5,-15.2],[5.8,-15.0],
+    [-6.2,7.5],[-4.2,-27.5],[6.2,7.2],[-6.4,-7.5],[6.4,-7.2],[-4.6,-10.5],
+    [-6.2,1.2],[6.2,1.2],[5.2,-27.5],[0.5,-3.2]
   ];
   PEOPLE.forEach((n,i)=>{
     let [x,z]=baseSpots[i]||[0,0];
@@ -948,11 +1210,15 @@ function initHubLife(){
     item.inter=inter;
     r.hubNpcs.push(item);
   });
-  // Добавляем массовку выживших игроков (чем меньше раунд, тем больше людей в зале!)
-  let crowdCount=[16,13,10,8,6,4][clamp(state.round,0,5)]||6;
+  let crowdCount=[14,11,9,7,5,4][clamp(state.round,0,5)]||5;
+  let crowdSpots=[
+    [-6.5,-12.5],[6.5,-12.5],[-6.5,-4.2],[6.5,-4.2],[-6.5,4.5],[6.5,4.5],
+    [-6.5,9.5],[6.5,9.5],[-3.8,-8.2],[4.2,-8.2],[-8.8,-15.5],[6.0,-16.8],
+    [-0.4,-1.8],[0.4,1.2]
+  ];
   for(let i=0;i<crowdCount;i++){
     let num=CROWD_NUMS[i];
-    let x=-8+(i%4)*5.2, z=-7+Math.floor(i/4)*5.2;
+    let [x,z]=crowdSpots[i%crowdSpots.length];
     let g=person(x,z,SUIT_COLORS[i%SUIT_COLORS.length],num,false,{hair:HAIRS[i%HAIRS.length],hairColor:HAIR_COLORS[i%HAIR_COLORS.length],skin:SKINS[i%SKINS.length],glasses:i%5===0});
     let item={g,npc:null,named:false,id:'crowd_'+num,name:`Игрок №${num}`,num,activity:'eat',timer:3+i*1.3,tx:x,tz:z,partner:null,line:EAT_LINES[i%EAT_LINES.length]};
     let inter={x,z,title:`E · Игрок №${num} — заговорить`,fn:()=>talkCrowd(item),mesh:g};
@@ -960,28 +1226,24 @@ function initHubLife(){
     item.inter=inter;
     r.hubNpcs.push(item);
   }
-  assignAllNpcActivities();
+  assignAllNpcActivities(true);
 }
 
-function assignAllNpcActivities(){
+function assignAllNpcActivities(snap=false){
   let r=roundData;if(!r.hubNpcs)return;
   let chats=PAIR_CHATS[clamp(state.round,0,5)]||PAIR_CHATS[0];
-  // Сбрасываем позу сна и подносы
   r.hubNpcs.forEach(u=>{
     u.partner=null;
     u.g.userData.bodyGroup.rotation.x=0;
     u.g.userData.bodyGroup.position.y=0;
     u.g.userData.propTray.visible=false;
   });
-  // Назначаем разнообразные действия так, чтобы одновременно в зале были:
-  // 1) пары, общающиеся друг с другом; 2) люди, едящие паёк у стойки; 3) люди в туалете; 4) спящие на койках; 5) смотрящие на копилку!
   let phaseOffset=Math.floor(gameTime/16)%5;
-  let pairSpots=[[-3.8,2.2],[-3.8,-5.2],[3.8,3.2],[3.4,-5.5]];
-  let eatSpots=[[-2.8,-9.6],[-1.1,-9.4],[1.1,-9.4],[2.8,-9.6],[-5.2,-8.4],[5.2,-8.4]];
-  let toiletSpots=[[18.6,-5.8],[21.2,-5.8],[23.6,5.4],[22.6,-1.8],[23.4,1.8]];
-  let piggySpots=[[-1.6,-2.8],[1.6,-2.8],[0,-3.6],[-2.0,-1.0]];
+  let pairSpots=[[-4.4,2.6],[4.4,2.8],[-4.6,-4.2],[4.6,-4.5]];
+  let eatSpots=[[-11.2,-15.4],[-9.8,-15.2],[-8.5,-15.6],[-10.8,-14.2],[-9.2,-14.4],[-7.8,-15.2]];
+  let toiletSpots=[[-5.2,-30.5],[-2.6,-30.5],[3.2,-30.4],[5.8,-26.5],[5.8,-29.5]];
+  let piggySpots=[[-3.4,-11.2],[3.4,-11.2],[-0.5,-1.5],[0.4,1.2]];
 
-  // Первые 4 пары (8 NPC) общаются друг с другом
   let rotated=[...r.hubNpcs.slice(phaseOffset),...r.hubNpcs.slice(0,phaseOffset)];
   for(let p=0;p<3;p++){
     let a=rotated[p*2], b=rotated[p*2+1];
@@ -990,15 +1252,13 @@ function assignAllNpcActivities(){
     let chat=chats[p%chats.length];
     a.activity='talk_pair';b.activity='talk_pair';
     a.partner=b;b.partner=a;
-    a.tx=px-.65;a.tz=pz;b.tx=px+.65;b.tz=pz;
+    a.tx=px-.58;a.tz=pz;b.tx=px+.58;b.tz=pz;
     a.line=chat[0];b.line=chat[1];
   }
-  // Остальным распределяем: еда, туалет, сон на койке, осмотр копилки
   for(let i=6;i<rotated.length;i++){
     let u=rotated[i], mod=(i+phaseOffset)%4;
-    // Мина (067) и Вера (212) особенно любят ходить в туалет к вентиляции/зеркалу
     if((u.npc?.perk==='mina'||u.npc?.perk==='vera')&&mod!==1)mod=1;
-    if(r.night&&i%2===0)mod=2; // ночью больше спящих
+    if(r.night&&i%2===0)mod=2;
     if(mod===0){
       let [ex,ez]=eatSpots[i%eatSpots.length];
       u.activity='eat';u.tx=ex;u.tz=ez;
@@ -1017,6 +1277,12 @@ function assignAllNpcActivities(){
       u.line=u.named?u.npc.reactions[clamp(state.round,0,5)]:PIGGY_LINES[i%PIGGY_LINES.length];
     }
   }
+  if(snap){
+    r.hubNpcs.forEach(u=>{
+      u.g.position.set(u.tx,0,u.tz);
+      if(u.g.userData.sign)u.g.userData.sign.position.set(u.tx,2.64,u.tz);
+    });
+  }
   r.hubNpcs.forEach(u=>refreshNpcSign(u));
 }
 
@@ -1032,14 +1298,20 @@ function refreshNpcSign(u){
   }
 }
 
-/* Навигация NPC через дверной проём между залом (x<14) и туалетом (x>16) */
+/* Навигация NPC через два входа в туалет (слева x = -6.0 и справа x = +6.0 от центральной арки на z = -20) */
 function stepNpcToward(u,dt){
   let g=u.g, cx=g.position.x, cz=g.position.z, tx=u.tx, tz=u.tz;
-  // Если NPC идёт из зала в туалет или обратно — сначала проводим через дверной проём (x=15, z=0)
-  let inBath=cx>14.8, targetBath=tx>14.8;
+  let inBath=cz<-20.0, targetBath=tz<-20.0;
   if(inBath!==targetBath){
-    if(Math.abs(cz)>1.6){tx=inBath?16.2:13.6;tz=0;}
-    else{tx=targetBath?16.5:13.4;tz=0;}
+    let doorX=(cx+tx)<0?-6.0:6.0;
+    if(Math.abs(cx-doorX)>1.05){
+      tx=doorX;tz=inBath?-24.5:-17.2;
+    }else{
+      tx=doorX;tz=targetBath?-24.8:-16.8;
+    }
+  }else if(inBath&&cz>-23.8&&Math.abs(tx)<4.4){
+    // Обход задней стенки центральной ниши внутри туалета
+    tz=-24.8;
   }
   let dx=tx-cx, dz=tz-cz, d=Math.hypot(dx,dz);
   if(d>.14){
@@ -1056,25 +1328,23 @@ function stepNpcToward(u,dt){
     if(u.activity==='talk_pair'&&u.partner){
       let pdx=u.partner.g.position.x-cx, pdz=u.partner.g.position.z-cz;
       g.rotation.y=Math.atan2(-pdx,-pdz);
-      // Жестикуляция при разговоре друг с другом
       u.g.userData.a.rotation.x=-.45+Math.sin(gameTime*4+u.g.userData.phase)*.25;
       u.g.userData.b.rotation.x=-.35-Math.sin(gameTime*3.5+u.g.userData.phase)*.22;
     }else if(u.activity==='eat'){
       u.g.userData.propTray.visible=true;
       u.g.userData.b.rotation.x=-.75;
-      u.g.userData.a.rotation.x=-.65+Math.sin(gameTime*5)*.28; // подносит ложку/воду
+      u.g.userData.a.rotation.x=-.65+Math.sin(gameTime*5)*.28;
     }else if(u.activity==='sleep'){
-      // Ложится на койку отдыхать
       u.g.userData.bodyGroup.rotation.x=-1.35;
       u.g.userData.bodyGroup.position.y=.72;
     }else if(u.activity==='toilet'){
-      if(cz<-4.5){
-        g.rotation.y=0; // лицом к зеркалу и раковинам
+      if(cz<-29.5){
+        g.rotation.y=0;
         u.g.userData.a.rotation.x=-.55+Math.sin(gameTime*6)*.2;
         u.g.userData.b.rotation.x=-.55-Math.sin(gameTime*6)*.2;
       }
     }else if(u.activity==='piggy'){
-      let pdx=0-cx, pdz=-1.5-cz;
+      let pdx=0-cx, pdz=-11.5-cz;
       g.rotation.y=Math.atan2(-pdx,-pdz);
     }
   }
@@ -1448,7 +1718,7 @@ function startStealth(){
   if(state.daily['stealth'+state.day]){toast('Этой ночью припасы уже собраны.');return;}
   closeModal();roundData.night=true;roundData.stealth=true;roundData.crates=0;roundData.stealthTime=75;roundData.guards=[];
   assignAllNpcActivities();
-  let spots=[[-5,-16],[5,-16],[22,4]]; // третий ящик можно забрать в крыле туалета!
+  let spots=[[-4.5,-16.5],[4.5,-16.5],[0,-28.5]]; // третий ящик можно забрать в крыле туалета!
   spots.forEach(([x,z])=>{
     let m=box(x,.45,z,.9,.9,.9,0xc09f5d);
     addInteract(x,z,'E · забрать ящик',()=>{if(m.visible){m.visible=false;roundData.crates++;beep(600);toast(`Припасы ${roundData.crates}/3. Вернись к своей койке.`);}},m);
@@ -1459,7 +1729,7 @@ function startStealth(){
     cone.rotation.x=Math.PI/2;cone.position.set(0,1,-4.5);g.add(cone);roundData.guards.push(g);
   }
   setObjective('НОЧНАЯ ВЫЛАЗКА','Собери 3 ящика (в зале и в туалете), избегая лучей охраны. C — красться. Затем вернись к койке.');
-  toast('Отбой! Свет погашен. Один из ящиков спрятан в туалете справа.');
+  toast('Отбой! Свет погашен. Один из ящиков спрятан в туалете.');
 }
 function allied(key){return state.allies.some(a=>{if(a===key)return true;let p=PEOPLE.find(x=>x.id===a);return p&&(p.perk===key||p.id===key);});}
 function rules(title,text,fn){openModal(title,text,[{text:'Начать испытание',primary:true,fn:()=>{closeModal();roundData.started=true;fn?.();}}],`ДЕНЬ ${state.day} · ${state.round===0?'ПЕРВАЯ ИГРА':'УТРО'} · ПРАВИЛА ИСПЫТАНИЯ`);}
@@ -2023,7 +2293,7 @@ function updateHub(dt){
     $('special').innerHTML=`Вылазка: <b>${r.crates}/3 ящика</b> · ${Math.ceil(r.stealthTime)} с${chatter}`;
     if(r.stealthTime<=0){state.daily['stealth'+state.day]=true;state.hp=Math.max(20,state.hp-12);save();buildDorm();toast('Обход охраны завершён. Припасы не получены.');}
   }else{
-    let loc=player.x>14.8?'ТУАЛЕТ И ВЕНТИЛЯЦИЯ':'ЗАЛ ОБЩЕЖИТИЯ';
+    let loc=player.z<-20.0?'ТУАЛЕТ И ВЕНТИЛЯЦИЯ':'ЗАЛ ОБЩЕЖИТИЯ';
     $('special').innerHTML=`<b>${loc}</b> · ${r.night?'НОЧЬ · койка: сон/вылазка':`${state.round===0?'До первой игры':`Вечер дня ${state.day}`} · До отбоя ${Math.ceil(Math.max(0,r.dayClock))} с`} · <b>G</b> сводка NPC${chatter}`;
   }
 }
