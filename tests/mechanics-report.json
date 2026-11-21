@@ -20,7 +20,7 @@
         "voted": true,
         "gotFoodAfterVote": true,
         "no_duplicate_food": true,
-        "trust": 3,
+        "trust": 2,
         "allies": [
           "p5",
           "tim"
@@ -31,8 +31,8 @@
       "test": "red-light fair crossing",
       "result": {
         "mode": "result",
-        "steps": 1476,
-        "z": -34.13367884157453,
+        "steps": 1947,
+        "z": -34.02955272634326,
         "round": 1
       }
     },

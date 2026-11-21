@@ -415,34 +415,130 @@ const mat=(c,rough=.78,metal=0,tex=null)=>new THREE.MeshStandardMaterial({color:
 function box(x,y,z,w,h,d,c,parent=world){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),typeof c==='number'||typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
 function sphere(x,y,z,r,c,parent=world){let m=new THREE.Mesh(new THREE.SphereGeometry(r,14,10),typeof c==='number'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
 function cylinder(x,y,z,r,h,c,parent=world,segments=18){let m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,segments),typeof c==='number'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-function label(text,x,y,z,size=1,color='#f6efdd',bg='rgba(12,22,29,.86)'){
-  let canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
+function extractSpeechQuote(line){
+  if(!line)return '';
+  let s=String(line).trim();
+  let m=s.match(/«([^»]+)»/);
+  if(m&&m[1])return `«${m[1].trim()}»`;
+  s=s.replace(/^№\d+\s+[^:]+:\s*/,'');
+  if(!s.startsWith('«'))s=`«${s.replace(/^[«"]+|[»"]+$/g,'')}»`;
+  return s;
+}
+
+function wrapSpeechLines(ctx,text,maxWidth,maxLines=3){
+  let words=String(text||'').split(/\s+/).filter(Boolean);
+  if(!words.length)return [''];
+  let lines=[],cur=words[0];
+  for(let i=1;i<words.length;i++){
+    let test=cur+' '+words[i];
+    if(ctx.measureText(test).width<=maxWidth){
+      cur=test;
+    }else{
+      lines.push(cur);
+      cur=words[i];
+      if(lines.length===maxLines-1)break;
+    }
+  }
+  let usedWords=lines.join(' ').split(/\s+/).filter(Boolean).length;
+  let rest=words.slice(usedWords).join(' ');
+  if(rest){
+    if(ctx.measureText(rest).width>maxWidth){
+      let base=rest.replace(/[…»"]+$/g,'');
+      while(base.length>4&&ctx.measureText(base+'…»').width>maxWidth){
+        base=base.slice(0,-3).trim();
+      }
+      rest=base+'…»';
+    }
+    lines.push(rest);
+  }
+  return lines.slice(0,maxLines);
+}
+
+function drawRoundedBubble(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.lineTo(x+w-r,y);
+  c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);
+  c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+w/2+22,y+h);
+  c.lineTo(x+w/2,y+h+26);
+  c.lineTo(x+w/2-22,y+h);
+  c.lineTo(x+r,y+h);
+  c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r);
+  c.quadraticCurveTo(x,y,x+r,y);
+  c.closePath();
+}
+
+function label(text,x,y,z,size=1,color='#f6efdd',bg='rgba(12,22,29,.86)',parent=world,isSpeech=false){
+  let canvas=document.createElement('canvas');
+  canvas.width=isSpeech?768:512;
+  canvas.height=isSpeech?240:128;
   let c=canvas.getContext('2d');
-  c.fillStyle=bg;c.fillRect(0,0,512,128);
-  c.strokeStyle='rgba(117,225,186,.45)';c.lineWidth=4;c.strokeRect(4,4,504,120);
-  c.font='bold 42px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=color;
-  c.fillText(text.slice(0,28),256,64);
-  let t=new THREE.CanvasTexture(canvas),m=new THREE.Sprite(new THREE.SpriteMaterial({map:t}));
-  m.position.set(x,y,z);m.scale.set(size*4.1,size,1);world.add(m);
-  m.userData={canvas,ctx:c,tex:t,text};
+  let t=new THREE.CanvasTexture(canvas),m=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:true}));
+  m.position.set(x,y,z);
+  if(isSpeech)m.scale.set(2.65,0.83,1);
+  else m.scale.set(size*4.1,size,1);
+  parent.add(m);
+  m.userData={canvas,ctx:c,tex:t,text,isSpeech};
+  if(isSpeech){
+    updateLabel(m,text,'',color);
+  }else{
+    c.fillStyle=bg;c.fillRect(0,0,512,128);
+    c.strokeStyle='rgba(117,225,186,.45)';c.lineWidth=4;c.strokeRect(4,4,504,120);
+    c.font='bold 42px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=color;
+    c.fillText(text.slice(0,28),256,64);
+  }
   return m;
 }
-function updateLabel(sprite,newText,subText='',color='#f6efdd'){
+
+function updateLabel(sprite,newText,subText='',color='#ffffff',accent='#75e1ba'){
   if(!sprite||!sprite.userData?.ctx)return;
-  let key=newText+'|'+subText+'|'+color;
+  let key=newText+'|'+subText+'|'+color+'|'+accent;
   if(sprite.userData.lastKey===key)return;
   sprite.userData.lastKey=key;
-  let {ctx:c,tex}=sprite.userData;
-  c.clearRect(0,0,512,128);
-  c.fillStyle='rgba(10,22,29,.88)';c.fillRect(0,0,512,128);
-  c.strokeStyle=subText?'rgba(242,117,154,.75)':'rgba(117,225,186,.5)';
-  c.lineWidth=4;c.strokeRect(4,4,504,120);
-  c.textAlign='center';c.textBaseline='middle';
-  if(subText){
-    c.font='bold 30px sans-serif';c.fillStyle='#75e1ba';c.fillText(newText.slice(0,30),256,38);
-    c.font='25px sans-serif';c.fillStyle=color;c.fillText(subText.slice(0,34),256,86);
+  let {canvas,ctx:c,tex,isSpeech}=sprite.userData;
+  c.clearRect(0,0,canvas.width,canvas.height);
+  if(isSpeech||canvas.width===768){
+    let quote=extractSpeechQuote(subText||newText);
+    let header=subText?newText:'';
+    c.fillStyle='rgba(8,18,24,.93)';
+    drawRoundedBubble(c,12,8,744,196,22);
+    c.fill();
+    c.strokeStyle=accent;
+    c.lineWidth=5;
+    c.stroke();
+    c.textAlign='center';c.textBaseline='middle';
+    if(header){
+      c.fillStyle='rgba(255,255,255,.07)';
+      c.fillRect(24,16,720,38);
+      c.font='bold 24px sans-serif';
+      c.fillStyle=accent;
+      c.fillText(header.slice(0,48),384,36);
+      c.font='bold 26px sans-serif';
+      c.fillStyle=color;
+      let lines=wrapSpeechLines(c,quote,700,3);
+      let startY=lines.length===1?124:lines.length===2?106:88;
+      let stepY=lines.length===3?34:38;
+      lines.forEach((ln,idx)=>c.fillText(ln,384,startY+idx*stepY));
+    }else{
+      c.font='bold 34px sans-serif';
+      c.fillStyle=color;
+      let lines=wrapSpeechLines(c,newText,700,2);
+      lines.forEach((ln,idx)=>c.fillText(ln,384,lines.length===1?106:(84+idx*44)));
+    }
   }else{
-    c.font='bold 42px sans-serif';c.fillStyle=color;c.fillText(newText.slice(0,28),256,64);
+    c.fillStyle='rgba(10,22,29,.88)';c.fillRect(0,0,512,128);
+    c.strokeStyle=subText?'rgba(242,117,154,.75)':'rgba(117,225,186,.5)';
+    c.lineWidth=4;c.strokeRect(4,4,504,120);
+    c.textAlign='center';c.textBaseline='middle';
+    if(subText){
+      c.font='bold 30px sans-serif';c.fillStyle='#75e1ba';c.fillText(newText.slice(0,30),256,38);
+      c.font='25px sans-serif';c.fillStyle=color;c.fillText(subText.slice(0,34),256,86);
+    }else{
+      c.font='bold 42px sans-serif';c.fillStyle=color;c.fillText(newText.slice(0,28),256,64);
+    }
   }
   tex.needsUpdate=true;
 }
@@ -510,7 +606,10 @@ function person(x,z,color=0x1e8476,number='',guard=false,opts={}){
     let shape=new THREE.Mesh(new THREE.RingGeometry(.105,.135,number==='△'?3:number==='□'?4:28),new THREE.MeshBasicMaterial({color:0xfafaf2,side:THREE.DoubleSide}));
     shape.position.set(0,1.95,-.28);if(number==='□')shape.rotation.z=Math.PI/4;bodyGroup.add(shape);
   }else if(number){
-    let s=label(`№${number}`,x,2.62,z,.25);if(opts.scale)g.scale.set(opts.scale,opts.scale,opts.scale);
+    let defaultSpeech=opts.speech||`«Я игрок №${number}. Надо держаться настороже!»`;
+    let s=label(`№${number}${opts.name&&!opts.name.startsWith('Игрок')?' · '+opts.name:''}`,0,2.88,0,.28,'#ffffff','rgba(10,20,27,.92)',g,true);
+    updateLabel(s,`Игрок №${number}`,defaultSpeech,'#ffffff','#75e1ba');
+    if(opts.scale)g.scale.set(opts.scale,opts.scale,opts.scale);
     g.userData.sign=s;
   }
   g.userData={...g.userData,bodyGroup,left,right,a,b,propTray,phase:Math.random()*6,number};
@@ -1410,7 +1509,6 @@ function assignAllNpcActivities(snap=false){
   if(snap){
     r.hubNpcs.forEach(u=>{
       u.g.position.set(u.tx,0,u.tz);
-      if(u.g.userData.sign)u.g.userData.sign.position.set(u.tx,2.64,u.tz);
     });
   }
   r.hubNpcs.forEach(u=>refreshNpcSign(u));
@@ -1418,13 +1516,47 @@ function assignAllNpcActivities(snap=false){
 
 function refreshNpcSign(u){
   let tag=ACT_LABELS[u.activity]||'';
-  let title=u.named?`№${u.num} (${u.npc.trait}) · ${tag}`:`№${u.num} · ${tag}`;
-  let shortLine=(u.line||'').replace(/^№\d+\s+[^:]+:\s*/,'');
-  updateLabel(u.g.userData.sign,title,shortLine);
+  let traitTxt=u.named?` (${u.npc.trait})`:'';
+  let header='', spoken='', accent='#75e1ba';
+  if(u.talkingToPlayer){
+    header=`🗣️ №${u.num}${traitTxt} → Тебе (№456)`;
+    spoken=u.playerLine||u.line||(u.named?u.npc.tip:'Держись рядом, 456-й!');
+    accent='#5ff2bd';
+  }else if(u.activity==='talk_pair'&&u.partner){
+    header=`💬 №${u.num}${traitTxt} → Игроку №${u.partner.num}`;
+    spoken=u.line;
+    accent='#ffd86b';
+  }else if(u.activity==='complain'){
+    header=`😠 №${u.num}${traitTxt} → Солдатам (□/△)`;
+    spoken=u.line;
+    accent='#ff7597';
+  }else if(u.activity==='piggy'){
+    header=`🗳️ №${u.num}${traitTxt} · У пульта О/Х`;
+    spoken=u.line;
+    accent='#6bc5ff';
+  }else{
+    header=`№${u.num}${traitTxt} · ${tag}`;
+    spoken=u.line;
+    accent='#8ef0cb';
+  }
+  if(u.g.userData.sign){
+    if(u.talkingToPlayer){
+      u.g.userData.sign.position.set(0,3.06,0);
+      u.g.userData.sign.scale.set(2.85,0.89,1);
+    }else if(u.activity==='talk_pair'&&u.partner){
+      let isLeft=u.tx<u.partner.tx||(u.tx===u.partner.tx&&u.id<u.partner.id);
+      u.g.userData.sign.position.set(isLeft?-0.22:0.22,isLeft?3.38:2.72,0);
+      u.g.userData.sign.scale.set(2.65,0.83,1);
+    }else{
+      u.g.userData.sign.position.set(0,2.88,0);
+      u.g.userData.sign.scale.set(2.65,0.83,1);
+    }
+  }
+  updateLabel(u.g.userData.sign,header,spoken,'#ffffff',accent);
   if(u.inter){
     u.inter.x=u.g.position.x;
     u.inter.z=u.g.position.z;
-    u.inter.title=`E · ${u.named?u.name:`Игрок №${u.num}`} (${tag}) — взаимодействовать`;
+    u.inter.title=`E · ${u.named?u.name:`Игрок №${u.num}`} (${tag}) — поговорить`;
   }
 }
 
@@ -1481,6 +1613,25 @@ function stepNpcToward(u,dt){
       let pdx=0-cx, pdz=-11.5-cz;
       g.rotation.y=Math.atan2(-pdx,-pdz);
     }
+  }
+  // Если игрок №456 подошёл близко к NPC, NPC поворачивается к игроку и над его головой появляется реплика, обращённая к игроку
+  let distToPlayer=Math.hypot(player.x-g.position.x,player.z-g.position.z);
+  let nearNow=distToPlayer<3.4&&u.activity!=='sleep';
+  if(nearNow){
+    g.rotation.y=Math.atan2(-(player.x-g.position.x),-(player.z-g.position.z));
+    if(!u.talkingToPlayer){
+      u.talkingToPlayer=true;
+      if(!u.playerLine){
+        u.playerLine=u.named
+          ?(state.round===0&&u.activity==='complain'?u.npc.complainLine:u.npc.reactions[clamp(state.round,0,5)])
+          :u.line;
+      }
+      refreshNpcSign(u);
+    }
+  }else if(u.talkingToPlayer){
+    u.talkingToPlayer=false;
+    u.playerLine=null;
+    refreshNpcSign(u);
   }
   if(u.inter){u.inter.x=g.position.x;u.inter.z=g.position.z;}
 }
@@ -1662,6 +1813,7 @@ function showDormOverview(){
 
 function talkCrowd(u){
   let act=ACT_LABELS[u.activity]||'В зале';
+  setNpcOverheadSpeech(u,u.line);
   openModal(`${u.name} · ${act}`,
     `<p class="lead">Выживший участник в зелёном костюме №${u.num}</p>
      <p><b>Что делает сейчас:</b> ${act}${u.partner?` с ${esc(u.partner.name)}`:''}</p>
@@ -1732,6 +1884,14 @@ function findNpcUnit(n){
   return roundData.hubNpcs?.find(u=>u.id===n.id)||null;
 }
 
+function setNpcOverheadSpeech(nOrUnit,speechText){
+  let u=nOrUnit?.g?nOrUnit:findNpcUnit(nOrUnit);
+  if(!u)return;
+  u.talkingToPlayer=true;
+  u.playerLine=speechText;
+  refreshNpcSign(u);
+}
+
 function talk(n){
   currentNpc=n;
   let r=relation(n), ally=state.allies.includes(n.id), u=findNpcUnit(n);
@@ -1744,6 +1904,7 @@ function talk(n){
 
   let debtLine=n.debtAmount?`<p class="small">Досье солдат: <b>долг ${esc(n.debtAmount)}</b> (${esc(n.debtReason)})</p>`:'';
   let displayReaction=(state.round===0&&u?.activity==='complain'&&n.complainLine)?n.complainLine:reaction;
+  setNpcOverheadSpeech(u,displayReaction);
   openModal(`Игрок №${n.num}`,
     `<p class="lead">${esc(roleTxt)} · <span style="color:#75e1ba">${act}</span>${partnerTxt}</p>
      ${debtLine}
@@ -1755,6 +1916,7 @@ function talk(n){
         if(!state.daily[key]){state.daily[key]=true;state.trust[n.id]=clamp(r+1,0,5);if(n===PEOPLE[5])state.trust.tim=state.trust[n.id];}
         if(!state.secrets.includes(n.id))state.secrets.push(n.id);
         save();
+        setNpcOverheadSpeech(u,n.tip);
         openModal(`Игрок №${n.num} · ${n.role}`,
           `<p>«${esc(n.tip)}»</p>
            <p><b>Особенность игрока:</b> ${esc(npcOffer(n))}</p>`,
@@ -2021,10 +2183,18 @@ function buildRed(){
   let extraTime=(allied('arkady')?12:0)+(state.ventScouted[0]?8:0);
   roundData={started:false,time:(difficulty==='easy'?110:85)+extraTime,light:'green',phase:4.2,warning:false,detection:0,doll,npcs:[],finish:0};
   for(let i=0;i<5;i++){let x=(i%2?-1:1)*5.2,z=22-i*12;box(x,1.3,z,4.8,2.6,2.4,0x8a9c96);solid(x,z,5,2.6);}
+  const RED_SPEECH=[
+    '«Двигаемся только пока кукла поёт!»',
+    '«Держись за бетонными блоками!»',
+    '«Не спеши, времени хватит!»',
+    '«Смотри на голову куклы впереди!»',
+    '«Если луч заметит движение — конец!»'
+  ];
   for(let i=0;i<15;i++){
-    let g=person(-11+(i%5)*5.5,33+Math.floor(i/5)*2.6,0x238878,String(105+i*7));
+    let numStr=String(105+i*7);
+    let g=person(-11+(i%5)*5.5,33+Math.floor(i/5)*2.6,0x238878,numStr,false,{speech:RED_SPEECH[i%RED_SPEECH.length]});
     g.rotation.y=0;
-    roundData.npcs.push({g,speed:3.1+Math.random()*1.6,alive:true});
+    roundData.npcs.push({g,num:numStr,speed:3.1+Math.random()*1.6,alive:true});
   }
   setObjective('01 · ТИШЕ ЕДЕШЬ','Дойди до линии у куклы на зелёный сигнал. На красный замри или укройся за блоком.');
   rules(TITLES[0],`<p>Пересеки дальнюю линию за ${roundData.time} с. На красный свет замри или встань за бетонный блок.</p>`);
@@ -2065,9 +2235,16 @@ function updateRed(dt,moving){
     let go=r.light==='green'&&!r.warning;
     if(go)n.g.position.z-=dt*n.speed;
     else if(r.light==='red'&&r.phase>2.4&&(i===3||i===11)&&n.g.position.z>-20){
-      n.alive=false;n.g.rotation.z=Math.PI/2;toast(`Участник №${n.g.userData.number} дрогнул на красном сигнале.`);
+      n.alive=false;n.g.rotation.z=Math.PI/2;if(n.g.userData.sign)n.g.userData.sign.visible=false;toast(`Участник №${n.g.userData.number} дрогнул на красном сигнале.`);
     }
     n.g.position.z=Math.max(-36,n.g.position.z);animatePerson(n.g,go,dt);
+    if(n.alive&&n.g.userData.sign){
+      let hdr=`№${n.num||n.g.userData.number} · ${r.light==='green'?(r.warning?'Тормозит!':'Бежит к линии'):'Замер на месте'}`;
+      let sp=r.light==='green'
+        ?(r.warning?'«Кукла замолкает — замирай сейчас же!»':'«Зелёный свет! Бежим вперёд, пока она поёт!»')
+        :'«Красный свет! Стой и не дыши!»';
+      updateLabel(n.g.userData.sign,hdr,sp,'#ffffff',r.light==='green'?(r.warning?'#ffd86b':'#75e1ba'):'#ff6b96');
+    }
   });
   if(player.z<-34)win(blockedLine(0,-40,player.x,player.z)?'Укрытия и выдержка привели тебя к финишу.':'Ты вовремя замирал и пересёк линию.',r.time>25?2:1);
   else if(r.time<=0)fail('Время вышло. Беги на зелёный и восстанавливай силы во время остановок.');
@@ -2087,8 +2264,14 @@ function buildCandy(){
   ['○','△','☆','☂'].forEach((sym,i)=>label(sym,-9+i*6,4.2,-17.3,.85,'#e34b7a'));
   box(0,.8,-3,6,1.6,4,0x799898);solid(0,-3,6.5,4.5);cylinder(0,1.67,-3,1.1,.12,0xdcb052);
   label('СТОЛ · САХАРНЫЕ СОТЫ',0,3.5,-3,.9);
+  const CARVE_SPEECH=[
+    '«Веди иглу плавно по контуру, не дави сильно!»',
+    '«Если карамель трескается — сделай паузу или смочи водой!»',
+    '«Зонтик самый сложный, круг и треугольник проще всего...»',
+    '«От запаха жжёного сахара руки дрожат...»'
+  ];
   for(let i=0;i<10;i++){
-    let g=person(-11+(i%5)*5.4,-11-Math.floor(i/5)*3.5,0x258877,String(180+i*9));
+    let g=person(-11+(i%5)*5.4,-11-Math.floor(i/5)*3.5,0x258877,String(180+i*9),false,{speech:CARVE_SPEECH[i%CARVE_SPEECH.length]});
     g.userData.bodyGroup.position.y=-.35; // сидят над баночками
   }
   person(-12,0,0xe33c70,'△',true);person(12,0,0xe33c70,'□',true);
@@ -2162,9 +2345,19 @@ function buildTug(){
   box(-1.6,3.8,0,.25,3.6,.25,0xcfd8dc);box(1.6,3.8,0,.25,3.6,.25,0xcfd8dc);box(0,5.4,0,3.6,.35,.35,0xe55b84);
   player={x:0,z:13,y:2,vy:0,yaw:0,pitch:0};bounds={minX:-4.5,maxX:4.5,minZ:6,maxZ:19};
   let rope=box(0,3.1,0,.11,.11,36,0xd0b47a);
+  const TUG_ALLY_SPEECH=[
+    '«Держи упор (C) и тяни строго в центр ритма!»',
+    '«Раз-два! Вместе на счёт!»',
+    '«Не срывай ритм, работаем синхронно!»'
+  ];
+  const TUG_OPP_SPEECH=[
+    '«Сдернем их с платформы!»',
+    '«Навались всей командой!»',
+    '«Они слабеют — тяни сильнее!»'
+  ];
   for(let i=0;i<6;i++){
-    let g=person(-1.8+(i%2)*3.6,7+Math.floor(i/2)*3.2,0x278c80,String(310+i*11));g.position.y=2;g.rotation.x=-.2;
-    let o=person(-1.8+(i%2)*3.6,-7-Math.floor(i/2)*3.2,0x386f6f,String(370+i*9));o.position.y=2;o.rotation.y=Math.PI;
+    let g=person(-1.8+(i%2)*3.6,7+Math.floor(i/2)*3.2,0x278c80,String(310+i*11),false,{speech:TUG_ALLY_SPEECH[i%3]});g.position.y=2;g.rotation.x=-.2;
+    let o=person(-1.8+(i%2)*3.6,-7-Math.floor(i/2)*3.2,0x386f6f,String(370+i*9),false,{speech:TUG_OPP_SPEECH[i%3]});o.position.y=2;o.rotation.y=Math.PI;
   }
   let flag=box(0,3.2,0,.65,.65,.08,0xee597f);
   let startProg=state.ventScouted[2]?.18:0;
@@ -2220,13 +2413,20 @@ function buildMarbles(){
     cylinder(x,1.8,z,.09,3.6,0x2e2a27);
     sphere(x,3.7,z,.24,new THREE.MeshStandardMaterial({color:0xffe29a,emissive:0xffae42,emissiveIntensity:1.6}));
   }
-  // Другие пары участников в соседних проулках
-  person(-10,-3,0x248274,'069');person(-10,-5.2,0x248274,'070');
-  person(10,-2,0x248274,'067');person(10,-4.2,0x248274,'240');
+  // Другие пары участников в соседних проулках с диалогами над головой
+  let p069=person(-10,-3,0x248274,'069',false,{speech:'«Мы же пришли сюда вместе... как я могу забрать твои шарики?!»'});
+  let p070=person(-10,-5.2,0x248274,'070',false,{speech:'«Продолжай играть, родной. Хотя бы один из нас должен вернуться...»'});
+  updateLabel(p069.userData.sign,'💬 №069 → Игроку №070','«Мы же пришли сюда вместе... как я могу забрать твои шарики?!»','#ffffff','#ffd86b');
+  updateLabel(p070.userData.sign,'💬 №070 → Игроку №069','«Продолжай играть, родной. Хотя бы один из нас должен вернуться...»','#ffffff','#ffd86b');
+  let p067=person(10,-2,0x248274,'067',false,{speech:'«Бросим по одному шарику к стене — решит один бросок».'});
+  let p240=person(10,-4.2,0x248274,'240',false,{speech:'«Спасибо, что сыграла со мной честно. Ты должна выиграть и выйти отсюда!»'});
+  updateLabel(p067.userData.sign,'💬 №067 → Игроку №240','«Бросим по одному шарику к стене — решит один бросок».','#ffffff','#ffd86b');
+  updateLabel(p240.userData.sign,'💬 №240 → Игроку №067','«Спасибо, что сыграла со мной честно. Ты должна выйти отсюда!»','#ffffff','#ffd86b');
   person(0,-15.5,0xe33c70,'○',true);
 
   let n=PEOPLE.find(x=>x.perk==='tim'||x.id==='tim')||PEOPLE[5];
-  let g=person(0,-3,n.suitColor||0x278b7d,n.num,false,{name:n.name,hair:n.hair,hairColor:n.hairColor,glasses:n.glasses,skin:n.skin,scale:n.scale});
+  let g=person(0,-3,n.suitColor||0x278b7d,n.num,false,{name:n.name,hair:n.hair,hairColor:n.hairColor,glasses:n.glasses,skin:n.skin,scale:n.scale,speech:'«Подойди ко мне (E): сыграем в чёт/нечёт, броски в лунку или договоримся!»'});
+  updateLabel(g.userData.sign,`🗣️ №${n.num} (${n.trait}) → Тебе (№456)`,'«Подойди ко мне (E): сыграем в чёт/нечёт, броски в лунку или договоримся!»','#ffffff','#5ff2bd');
   roundData={started:false,time:(difficulty==='easy'?180:135)+(allied('arkady')?12:0),count:10,other:10,shots:0,aimYaw:0,aimPower:.5,shot:null,challenge:null,opponent:g,partner:n,tries:0};
   cylinder(0,.025,-9,1.3,.05,0x536f66);cylinder(0,.03,-9,.55,.06,0x1c3438);label('ЛУНКА',0,2,-9,.5);
   addInteract(0,-.5,`E · ${n.name} — выбрать игру с шариками`,marbleMenu);
@@ -2325,7 +2525,9 @@ function buildGlass(){
   label('ВЫХОД С МОСТА',0,4,-29,.8);
   if(allied('boris')||allied('diver')){state.probes++;toast('Союзник передал дополнительный камешек.');}
   if(state.ventScouted[4]||state.shamanHints?.[4]||allied('shaman')){revealGlass(0,roundData.rows[0].safe);if(state.shamanHints?.[4]||allied('shaman'))revealGlass(1,roundData.rows[1].safe);}
-  let g=person(1.75,28,0x298b7a,'310');g.position.y=2;roundData.npc=g;
+  let g=person(1.75,28,0x298b7a,'310',false,{speech:'«Внизу пропасть! Проверь плиту камешком (Q) или пусти меня вперёд (E)!»'});
+  updateLabel(g.userData.sign,'🗣️ №310 → Тебе (№456)','«Внизу пропасть! Проверь плиту камешком (Q) или пусти меня вперёд (E)!»','#ffffff','#ffd86b');
+  g.position.y=2;roundData.npc=g;
   setObjective('05 · СТЕКЛЯННЫЙ МОСТ','В каждой паре прочное только закалённое стекло. Q — проверить панель, E — пустить игрока вперёд.');
   rules(TITLES[4],`<p>Пройди 12 пар стеклянных плит за ${roundData.time} с. <b>Q</b> — проверка стекла, <b>E</b> — пустить NPC вперёд.</p>`);
 }
